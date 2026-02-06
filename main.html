@@ -66,6 +66,7 @@
   <button onclick="prev()">⏮ Prev</button>
   <button onclick="playPause()">▶ / ⏸</button>
   <button onclick="next()">⏭ Next</button>
+  <button id="like-btn" onclick="toggleLike()">♡ Like</button>
 </div>
 
 <audio id="audio" controls style="width: 80%; margin-top: 10px;"></audio>
@@ -73,8 +74,6 @@
 
 <script>
 // ====== DATA ======
-
-// Example albums (add new albums by adding objects here)
 const albums = [
   {
     title: "Nevermind — Nirvana",
@@ -95,10 +94,7 @@ const albums = [
   }
 ];
 
-// Liked songs array
 let likedSongs = [];
-
-// ====== STATE ======
 let currentAlbumIndex = 0;
 let currentTrackIndex = 0;
 let currentView = "albums"; // "albums" or "liked"
@@ -106,6 +102,7 @@ let currentView = "albums"; // "albums" or "liked"
 const audio = document.getElementById("audio");
 const viewDiv = document.getElementById("view");
 const status = document.getElementById("status");
+const likeBtn = document.getElementById("like-btn");
 
 // ====== FUNCTIONS ======
 
@@ -147,9 +144,10 @@ function loadTrack() {
   audio.src = track.file;
   status.textContent = "Selected: " + track.title;
   updateTrackUI();
+  updateLikeButton();
 }
 
-// Update track list UI highlighting
+// Update track UI highlighting
 function updateTrackUI() {
   if(currentView === "albums") {
     const trackDivs = document.querySelectorAll(".tracks div");
@@ -161,12 +159,13 @@ function updateTrackUI() {
 
 // Play / pause toggle
 function playPause() {
+  const track = albums[currentAlbumIndex].tracks[currentTrackIndex];
   if(audio.paused) {
     audio.play();
-    status.textContent = "▶ Playing: " + albums[currentAlbumIndex].tracks[currentTrackIndex].title;
+    status.textContent = "▶ Playing: " + track.title;
   } else {
     audio.pause();
-    status.textContent = "⏸ Paused: " + albums[currentAlbumIndex].tracks[currentTrackIndex].title;
+    status.textContent = "⏸ Paused: " + track.title;
   }
 }
 
@@ -185,15 +184,24 @@ function prev() {
   audio.play();
 }
 
-// Like / Unlike current track
+// Toggle like for current track
 function toggleLike() {
   const track = albums[currentAlbumIndex].tracks[currentTrackIndex];
   if(!likedSongs.includes(track)) {
     likedSongs.push(track);
+  } else {
+    likedSongs = likedSongs.filter(t => t !== track);
   }
+  updateLikeButton();
 }
 
-// Show liked songs
+// Update like button text
+function updateLikeButton() {
+  const track = albums[currentAlbumIndex].tracks[currentTrackIndex];
+  likeBtn.textContent = likedSongs.includes(track) ? "❤️ Liked" : "♡ Like";
+}
+
+// Show liked songs view
 function showLiked() {
   currentView = "liked";
   viewDiv.innerHTML = "<h2>Liked Songs</h2>";
@@ -211,6 +219,7 @@ function showLiked() {
           currentTrackIndex = idx;
           loadTrack();
           audio.play();
+          showTracks(ai); // switch to album track view
         }
       });
     };
