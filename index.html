@@ -224,6 +224,7 @@
     transition: all 0.3s ease;
     border: 1px solid;
     backdrop-filter: blur(10px);
+    position: relative;
   }
 
   .album-card:hover {
@@ -263,6 +264,34 @@
     text-align: center;
   }
 
+  /* Like button on album cards */
+  .like-btn {
+    position: absolute;
+    top: 28px;
+    right: 28px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    z-index: 10;
+  }
+
+  .like-btn:hover {
+    transform: scale(1.1);
+    background: rgba(0, 0, 0, 0.9);
+  }
+
+  .like-btn.liked {
+    background: rgba(220, 38, 38, 0.9);
+  }
+
   /* Track List */
   .track-view {
     animation: fadeIn 0.4s ease;
@@ -292,6 +321,10 @@
     box-shadow: 0 8px 16px rgba(0,0,0,0.3);
   }
 
+  .track-header-info {
+    flex: 1;
+  }
+
   .track-header h2 {
     color: white;
     font-size: 2rem;
@@ -310,6 +343,52 @@
     color: rgba(255, 255, 255, 0.7);
     font-size: 1rem;
     font-weight: 400;
+  }
+
+  .track-header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .album-like-btn {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    padding: 12px 24px;
+    color: white;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+  }
+
+  .album-like-btn:hover {
+    transform: scale(1.05);
+  }
+
+  .album-like-btn.liked {
+    background: rgba(220, 38, 38, 0.9);
+    border-color: rgba(220, 38, 38, 1);
+  }
+
+  .add-to-playlist-btn {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    padding: 12px 24px;
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-weight: 600;
+  }
+
+  .add-to-playlist-btn:hover {
+    transform: scale(1.05);
   }
 
   .tracks {
@@ -349,6 +428,36 @@
     font-weight: 700;
   }
 
+  .track-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .track-item:hover .track-actions,
+  .track-item.current .track-actions {
+    opacity: 1;
+  }
+
+  .track-like-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.2s ease;
+  }
+
+  .track-like-btn:hover {
+    transform: scale(1.1);
+  }
+
+  .track-like-btn.liked {
+    color: #dc2626;
+  }
+
   .play-icon {
     opacity: 0;
     color: white;
@@ -358,6 +467,238 @@
   .track-item:hover .play-icon,
   .track-item.current .play-icon {
     opacity: 1;
+  }
+
+  /* Playlists Section */
+  .playlists-section {
+    margin-bottom: 30px;
+  }
+
+  .create-playlist-btn {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid;
+    border-radius: 16px;
+    padding: 20px;
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    width: 100%;
+    margin-bottom: 24px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .create-playlist-btn:hover {
+    transform: translateY(-4px);
+  }
+
+  .playlist-card {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 1px solid;
+    backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .playlist-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .playlist-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 12px;
+  }
+
+  .playlist-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    flex-shrink: 0;
+  }
+
+  .playlist-info {
+    flex: 1;
+  }
+
+  .playlist-info h3 {
+    color: white;
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+  }
+
+  .playlist-meta {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+  }
+
+  .playlist-delete-btn {
+    background: rgba(220, 38, 38, 0.2);
+    border: 1px solid rgba(220, 38, 38, 0.5);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #dc2626;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+  }
+
+  .playlist-delete-btn:hover {
+    background: rgba(220, 38, 38, 0.4);
+    transform: scale(1.1);
+  }
+
+  /* Modal */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal.active {
+    display: flex;
+  }
+
+  .modal-content {
+    background: rgba(20, 20, 20, 0.95);
+    border-radius: 24px;
+    padding: 40px;
+    max-width: 500px;
+    width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .modal-content h2 {
+    color: white;
+    font-size: 1.8rem;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .modal-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    padding: 16px;
+    color: white;
+    font-size: 1rem;
+    margin-bottom: 24px;
+    font-family: inherit;
+  }
+
+  .modal-input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .modal-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .modal-buttons {
+    display: flex;
+    gap: 12px;
+  }
+
+  .modal-btn {
+    flex: 1;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .modal-btn.primary {
+    background: white;
+    color: black;
+  }
+
+  .modal-btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+
+  .modal-btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .playlist-select-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+  }
+
+  .playlist-select-item {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .playlist-select-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(4px);
+  }
+
+  .playlist-select-item span {
+    color: white;
+    font-weight: 500;
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 16px;
+  }
+
+  .empty-state-text {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+
+  .empty-state-subtext {
+    font-size: 0.95rem;
   }
 
   /* Player Controls */
@@ -600,6 +941,11 @@
       text-align: center;
     }
 
+    .track-header-actions {
+      width: 100%;
+      justify-content: center;
+    }
+
     .volume-slider {
       width: 120px;
     }
@@ -625,6 +971,8 @@
     <button class="view-btn active" onclick="setView('artists')">By Artist</button>
     <button class="view-btn" onclick="setView('albums')">All Albums</button>
     <button class="view-btn" onclick="setView('chronological')">Chronological</button>
+    <button class="view-btn" onclick="setView('playlists')">📝 Playlists</button>
+    <button class="view-btn" onclick="setView('liked')">❤️ Liked</button>
   </div>
 
   <div id="view"></div>
@@ -662,6 +1010,29 @@
         <div class="volume-fill" id="volumeFill"></div>
       </div>
       <span class="volume-percentage" id="volumePercentage">100%</span>
+    </div>
+  </div>
+</div>
+
+<!-- Create Playlist Modal -->
+<div class="modal" id="createPlaylistModal">
+  <div class="modal-content">
+    <h2>Create New Playlist</h2>
+    <input type="text" class="modal-input" id="playlistNameInput" placeholder="Playlist name">
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeCreatePlaylistModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="createPlaylist()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add to Playlist Modal -->
+<div class="modal" id="addToPlaylistModal">
+  <div class="modal-content">
+    <h2>Add to Playlist</h2>
+    <div class="playlist-select-list" id="playlistSelectList"></div>
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeAddToPlaylistModal()">Cancel</button>
     </div>
   </div>
 </div>
@@ -756,28 +1127,19 @@ const library = {
         }
       ]
     }
-    // Add more artists here in the same format
-    // Example:
-    // {
-    //   name: "Artist Name",
-    //   albums: [
-    //     {
-    //       title: "Album Title",
-    //       cover: "cover.jpg",
-    //       releaseDate: "YYYY-MM-DD",
-    //       displayDate: "Month Day, Year",
-    //       theme: { ... },
-    //       tracks: [ ... ]
-    //     }
-    //   ]
-    // }
   ]
 };
+
+// User data (stored in localStorage)
+let playlists = JSON.parse(localStorage.getItem('playlists')) || [];
+let likedAlbums = JSON.parse(localStorage.getItem('likedAlbums')) || [];
+let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
 
 let currentView = 'artists';
 let currentArtistIndex = 0;
 let currentAlbumIndex = 0;
 let currentTrackIndex = 0;
+let currentPlaylistId = null;
 const audio = document.getElementById("audio");
 const viewDiv = document.getElementById("view");
 const status = document.getElementById("status");
@@ -796,7 +1158,7 @@ const volumeIcon = document.getElementById("volumeIcon");
 audio.volume = 1.0;
 let previousVolume = 1.0;
 let isShuffleOn = false;
-let repeatMode = 'off'; // 'off', 'all', 'one'
+let repeatMode = 'off';
 let shuffleOrder = [];
 let shuffleIndex = 0;
 
@@ -822,6 +1184,247 @@ function getAlbumsSortedByDate() {
   );
 }
 
+function getAlbumKey(artistIdx, albumIdx) {
+  return `${artistIdx}-${albumIdx}`;
+}
+
+function getTrackKey(artistIdx, albumIdx, trackIdx) {
+  return `${artistIdx}-${albumIdx}-${trackIdx}`;
+}
+
+function isAlbumLiked(artistIdx, albumIdx) {
+  return likedAlbums.includes(getAlbumKey(artistIdx, albumIdx));
+}
+
+function isTrackLiked(artistIdx, albumIdx, trackIdx) {
+  return likedSongs.includes(getTrackKey(artistIdx, albumIdx, trackIdx));
+}
+
+function saveData() {
+  localStorage.setItem('playlists', JSON.stringify(playlists));
+  localStorage.setItem('likedAlbums', JSON.stringify(likedAlbums));
+  localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
+}
+
+// ====== LIKE FUNCTIONS ======
+function toggleAlbumLike(artistIdx, albumIdx, event) {
+  if (event) event.stopPropagation();
+  
+  const key = getAlbumKey(artistIdx, albumIdx);
+  const index = likedAlbums.indexOf(key);
+  
+  if (index > -1) {
+    likedAlbums.splice(index, 1);
+  } else {
+    likedAlbums.push(key);
+  }
+  
+  saveData();
+  
+  // Update UI
+  const btn = event?.target;
+  if (btn) {
+    btn.textContent = isAlbumLiked(artistIdx, albumIdx) ? '❤️' : '🤍';
+    btn.classList.toggle('liked');
+  }
+}
+
+function toggleTrackLike(artistIdx, albumIdx, trackIdx, event) {
+  if (event) event.stopPropagation();
+  
+  const key = getTrackKey(artistIdx, albumIdx, trackIdx);
+  const index = likedSongs.indexOf(key);
+  
+  if (index > -1) {
+    likedSongs.splice(index, 1);
+  } else {
+    likedSongs.push(key);
+  }
+  
+  saveData();
+  
+  // Update UI
+  const btn = event?.target;
+  if (btn) {
+    btn.textContent = isTrackLiked(artistIdx, albumIdx, trackIdx) ? '❤️' : '🤍';
+    btn.classList.toggle('liked');
+  }
+}
+
+// ====== PLAYLIST FUNCTIONS ======
+function openCreatePlaylistModal() {
+  document.getElementById('createPlaylistModal').classList.add('active');
+  document.getElementById('playlistNameInput').value = '';
+  document.getElementById('playlistNameInput').focus();
+}
+
+function closeCreatePlaylistModal() {
+  document.getElementById('createPlaylistModal').classList.remove('active');
+}
+
+function createPlaylist() {
+  const name = document.getElementById('playlistNameInput').value.trim();
+  
+  if (!name) {
+    alert('Please enter a playlist name');
+    return;
+  }
+  
+  const playlist = {
+    id: Date.now().toString(),
+    name: name,
+    tracks: [],
+    createdAt: new Date().toISOString()
+  };
+  
+  playlists.push(playlist);
+  saveData();
+  closeCreatePlaylistModal();
+  
+  if (currentView === 'playlists') {
+    showPlaylistsView();
+  }
+}
+
+function deletePlaylist(playlistId, event) {
+  event.stopPropagation();
+  
+  if (confirm('Are you sure you want to delete this playlist?')) {
+    playlists = playlists.filter(p => p.id !== playlistId);
+    saveData();
+    showPlaylistsView();
+  }
+}
+
+function openAddToPlaylistModal(artistIdx, albumIdx) {
+  currentPlaylistId = getAlbumKey(artistIdx, albumIdx);
+  
+  const listEl = document.getElementById('playlistSelectList');
+  
+  if (playlists.length === 0) {
+    listEl.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">📝</div>
+        <div class="empty-state-text">No playlists yet</div>
+        <div class="empty-state-subtext">Create a playlist first!</div>
+      </div>
+    `;
+  } else {
+    listEl.innerHTML = playlists.map(playlist => `
+      <div class="playlist-select-item" onclick="addAlbumToPlaylist('${playlist.id}', ${artistIdx}, ${albumIdx})">
+        <span>📝</span>
+        <span>${playlist.name}</span>
+      </div>
+    `).join('');
+  }
+  
+  document.getElementById('addToPlaylistModal').classList.add('active');
+}
+
+function closeAddToPlaylistModal() {
+  document.getElementById('addToPlaylistModal').classList.remove('active');
+  currentPlaylistId = null;
+}
+
+function addAlbumToPlaylist(playlistId, artistIdx, albumIdx) {
+  const playlist = playlists.find(p => p.id === playlistId);
+  const album = library.artists[artistIdx].albums[albumIdx];
+  
+  // Add all tracks from the album
+  album.tracks.forEach((track, trackIdx) => {
+    const trackData = {
+      artistIdx,
+      albumIdx,
+      trackIdx,
+      artistName: library.artists[artistIdx].name,
+      albumTitle: album.title,
+      trackTitle: track.title,
+      file: track.file
+    };
+    
+    // Avoid duplicates
+    const exists = playlist.tracks.some(t => 
+      t.artistIdx === artistIdx && 
+      t.albumIdx === albumIdx && 
+      t.trackIdx === trackIdx
+    );
+    
+    if (!exists) {
+      playlist.tracks.push(trackData);
+    }
+  });
+  
+  saveData();
+  closeAddToPlaylistModal();
+  status.textContent = `✓ Album added to "${playlist.name}"`;
+  setTimeout(() => status.textContent = 'Ready to play', 2000);
+}
+
+function showPlaylist(playlistId) {
+  const playlist = playlists.find(p => p.id === playlistId);
+  if (!playlist) return;
+  
+  const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
+  
+  if (playlist.tracks.length === 0) {
+    viewDiv.innerHTML = `
+      <button class="back-btn" onclick="setView('playlists')">← Back to Playlists</button>
+      <div class="empty-state">
+        <div class="empty-state-icon">🎵</div>
+        <div class="empty-state-text">No tracks in this playlist</div>
+        <div class="empty-state-subtext">Add albums to your playlist to see them here</div>
+      </div>
+    `;
+    return;
+  }
+  
+  const tracksHTML = playlist.tracks.map((track, idx) => `
+    <div class="track-item" onclick="playPlaylistTrack('${playlistId}', ${idx})">
+      <span class="track-number">${idx + 1}</span>
+      <span class="track-title">${track.trackTitle}</span>
+      <span style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;">${track.artistName} • ${track.albumTitle}</span>
+      <div class="track-actions">
+        <button class="track-like-btn ${isTrackLiked(track.artistIdx, track.albumIdx, track.trackIdx) ? 'liked' : ''}" 
+                onclick="toggleTrackLike(${track.artistIdx}, ${track.albumIdx}, ${track.trackIdx}, event)">
+          ${isTrackLiked(track.artistIdx, track.albumIdx, track.trackIdx) ? '❤️' : '🤍'}
+        </button>
+        <span class="play-icon">▶</span>
+      </div>
+    </div>
+  `).join('');
+  
+  viewDiv.innerHTML = `
+    <button class="back-btn" onclick="setView('playlists')">← Back to Playlists</button>
+    <div class="track-view">
+      <div class="track-header">
+        <div class="playlist-icon" style="background: ${theme.primary}; color: ${theme.primary === '#ffffff' ? '#000' : '#fff'};">📝</div>
+        <div class="track-header-info">
+          <h2>${playlist.name}</h2>
+          <p class="artist-name">${playlist.tracks.length} tracks</p>
+        </div>
+      </div>
+      <div class="tracks">
+        ${tracksHTML}
+      </div>
+    </div>
+  `;
+  
+  updateThemedElements(theme);
+}
+
+function playPlaylistTrack(playlistId, trackIndex) {
+  const playlist = playlists.find(p => p.id === playlistId);
+  const track = playlist.tracks[trackIndex];
+  
+  currentArtistIndex = track.artistIdx;
+  currentAlbumIndex = track.albumIdx;
+  currentTrackIndex = track.trackIdx;
+  
+  applyTheme(currentArtistIndex, currentAlbumIndex);
+  loadTrack();
+  audio.play();
+}
+
 // ====== THEME FUNCTIONS ======
 function applyTheme(artistIdx, albumIdx) {
   const theme = library.artists[artistIdx].albums[albumIdx].theme;
@@ -838,7 +1441,6 @@ function applyTheme(artistIdx, albumIdx) {
 }
 
 function updateThemedElements(theme) {
-  // View buttons
   document.querySelectorAll('.view-btn').forEach(btn => {
     btn.style.background = `rgba(${theme.primaryRgb}, 0.2)`;
     btn.style.borderColor = `rgba(${theme.primaryRgb}, 0.4)`;
@@ -849,7 +1451,6 @@ function updateThemedElements(theme) {
     }
   });
   
-  // Filter buttons
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.style.background = `rgba(${theme.primaryRgb}, 0.2)`;
     btn.style.borderColor = `rgba(${theme.primaryRgb}, 0.4)`;
@@ -860,23 +1461,15 @@ function updateThemedElements(theme) {
     }
   });
   
-  // Artist cards
-  document.querySelectorAll('.artist-card').forEach(card => {
+  document.querySelectorAll('.artist-card, .album-card, .playlist-card').forEach(card => {
     card.style.borderColor = `rgba(${theme.primaryRgb}, 0.2)`;
   });
   
-  // Artist initials
-  document.querySelectorAll('.artist-initial').forEach(initial => {
+  document.querySelectorAll('.artist-initial, .playlist-icon').forEach(initial => {
     initial.style.background = theme.primary;
     initial.style.color = theme.primary === '#ffffff' ? '#000' : '#fff';
   });
   
-  // Album cards
-  document.querySelectorAll('.album-card').forEach(card => {
-    card.style.borderColor = `rgba(${theme.primaryRgb}, 0.2)`;
-  });
-  
-  // Track items
   document.querySelectorAll('.track-item').forEach(item => {
     if (item.classList.contains('current')) {
       item.style.background = `rgba(${theme.primaryRgb}, 0.25)`;
@@ -884,7 +1477,6 @@ function updateThemedElements(theme) {
     }
   });
   
-  // Track numbers
   document.querySelectorAll('.track-number').forEach(num => {
     num.style.color = `rgba(${theme.primaryRgb}, 0.7)`;
   });
@@ -893,13 +1485,11 @@ function updateThemedElements(theme) {
     num.style.color = theme.primary;
   });
   
-  // Player section
   const playerSection = document.querySelector('.player-section');
   if (playerSection) {
     playerSection.style.borderTopColor = `rgba(${theme.primaryRgb}, 0.3)`;
   }
   
-  // Player controls
   document.querySelectorAll('.player-controls button').forEach(btn => {
     btn.style.borderColor = `rgba(${theme.primaryRgb}, 0.4)`;
     btn.style.color = theme.primary;
@@ -911,23 +1501,24 @@ function updateThemedElements(theme) {
     }
   });
   
-  // Progress bar
   progressFill.style.background = theme.primary;
-  
-  // Volume bar
   volumeFill.style.background = theme.primary;
   
-  // Back button
   const backBtn = document.querySelector('.back-btn');
   if (backBtn) {
     backBtn.style.borderColor = `rgba(${theme.primaryRgb}, 0.4)`;
     backBtn.style.color = theme.primary;
   }
   
-  // Track header
   const trackHeader = document.querySelector('.track-header');
   if (trackHeader) {
     trackHeader.style.borderColor = `rgba(${theme.primaryRgb}, 0.3)`;
+  }
+  
+  const createPlaylistBtn = document.querySelector('.create-playlist-btn');
+  if (createPlaylistBtn) {
+    createPlaylistBtn.style.borderColor = `rgba(${theme.primaryRgb}, 0.4)`;
+    createPlaylistBtn.style.background = `rgba(${theme.primaryRgb}, 0.2)`;
   }
 }
 
@@ -935,13 +1526,11 @@ function updateThemedElements(theme) {
 function setView(view) {
   currentView = view;
   
-  // Update button states
   document.querySelectorAll('.view-btn').forEach(btn => {
     btn.classList.remove('active');
   });
   event.target.classList.add('active');
   
-  // Show appropriate view
   switch(view) {
     case 'artists':
       showArtistsView();
@@ -951,6 +1540,12 @@ function setView(view) {
       break;
     case 'chronological':
       showChronological();
+      break;
+    case 'playlists':
+      showPlaylistsView();
+      break;
+    case 'liked':
+      showLikedView();
       break;
   }
 }
@@ -963,6 +1558,10 @@ function showArtistsView() {
     
     const albumsHTML = artist.albums.map((album, albumIdx) => `
       <div class="album-card" onclick="showTracks(${artistIdx}, ${albumIdx})">
+        <button class="like-btn ${isAlbumLiked(artistIdx, albumIdx) ? 'liked' : ''}" 
+                onclick="toggleAlbumLike(${artistIdx}, ${albumIdx}, event)">
+          ${isAlbumLiked(artistIdx, albumIdx) ? '❤️' : '🤍'}
+        </button>
         <img src="${album.cover}" alt="${album.title}">
         <p class="album-title">${album.title}</p>
         <p class="album-date">${album.displayDate}</p>
@@ -1000,6 +1599,10 @@ function showAllAlbums() {
   
   const albumsHTML = albums.map(album => `
     <div class="album-card" onclick="showTracks(${album.artistIndex}, ${album.albumIndex})">
+      <button class="like-btn ${isAlbumLiked(album.artistIndex, album.albumIndex) ? 'liked' : ''}" 
+              onclick="toggleAlbumLike(${album.artistIndex}, ${album.albumIndex}, event)">
+        ${isAlbumLiked(album.artistIndex, album.albumIndex) ? '❤️' : '🤍'}
+      </button>
       <img src="${album.cover}" alt="${album.title}">
       <p class="album-title">${album.title}</p>
       <p class="album-artist">${album.artistName}</p>
@@ -1016,6 +1619,10 @@ function showChronological() {
   
   const albumsHTML = albums.map(album => `
     <div class="album-card" onclick="showTracks(${album.artistIndex}, ${album.albumIndex})">
+      <button class="like-btn ${isAlbumLiked(album.artistIndex, album.albumIndex) ? 'liked' : ''}" 
+              onclick="toggleAlbumLike(${album.artistIndex}, ${album.albumIndex}, event)">
+        ${isAlbumLiked(album.artistIndex, album.albumIndex) ? '❤️' : '🤍'}
+      </button>
       <img src="${album.cover}" alt="${album.title}">
       <p class="album-title">${album.title}</p>
       <p class="album-artist">${album.artistName}</p>
@@ -1027,7 +1634,152 @@ function showChronological() {
   updateThemedElements(library.artists[currentArtistIndex].albums[currentAlbumIndex].theme);
 }
 
-// Show tracks for an album
+function showPlaylistsView() {
+  const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
+  
+  if (playlists.length === 0) {
+    viewDiv.innerHTML = `
+      <button class="create-playlist-btn" onclick="openCreatePlaylistModal()">
+        <span style="font-size: 1.5rem;">➕</span>
+        Create Your First Playlist
+      </button>
+      <div class="empty-state">
+        <div class="empty-state-icon">📝</div>
+        <div class="empty-state-text">No playlists yet</div>
+        <div class="empty-state-subtext">Create a playlist to organize your favorite tracks</div>
+      </div>
+    `;
+  } else {
+    const playlistsHTML = playlists.map(playlist => `
+      <div class="playlist-card" onclick="showPlaylist('${playlist.id}')">
+        <div class="playlist-header">
+          <div class="playlist-icon" style="background: ${theme.primary}; color: ${theme.primary === '#ffffff' ? '#000' : '#fff'};">📝</div>
+          <div class="playlist-info">
+            <h3>${playlist.name}</h3>
+            <p class="playlist-meta">${playlist.tracks.length} tracks</p>
+          </div>
+          <button class="playlist-delete-btn" onclick="deletePlaylist('${playlist.id}', event)">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+    
+    viewDiv.innerHTML = `
+      <button class="create-playlist-btn" onclick="openCreatePlaylistModal()">
+        <span style="font-size: 1.5rem;">➕</span>
+        Create New Playlist
+      </button>
+      <div class="playlists-section">
+        ${playlistsHTML}
+      </div>
+    `;
+  }
+  
+  updateThemedElements(theme);
+}
+
+function showLikedView() {
+  const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
+  
+  // Get liked albums
+  const likedAlbumsData = likedAlbums.map(key => {
+    const [artistIdx, albumIdx] = key.split('-').map(Number);
+    const artist = library.artists[artistIdx];
+    const album = artist.albums[albumIdx];
+    return {
+      ...album,
+      artistName: artist.name,
+      artistIndex: artistIdx,
+      albumIndex: albumIdx
+    };
+  });
+  
+  // Get liked songs
+  const likedSongsData = likedSongs.map(key => {
+    const [artistIdx, albumIdx, trackIdx] = key.split('-').map(Number);
+    const artist = library.artists[artistIdx];
+    const album = artist.albums[albumIdx];
+    const track = album.tracks[trackIdx];
+    return {
+      artistIdx,
+      albumIdx,
+      trackIdx,
+      artistName: artist.name,
+      albumTitle: album.title,
+      trackTitle: track.title,
+      file: track.file
+    };
+  });
+  
+  if (likedAlbumsData.length === 0 && likedSongsData.length === 0) {
+    viewDiv.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-state-icon">❤️</div>
+        <div class="empty-state-text">No liked albums or songs yet</div>
+        <div class="empty-state-subtext">Start liking your favorites to see them here</div>
+      </div>
+    `;
+    updateThemedElements(theme);
+    return;
+  }
+  
+  let html = '';
+  
+  if (likedAlbumsData.length > 0) {
+    const albumsHTML = likedAlbumsData.map(album => `
+      <div class="album-card" onclick="showTracks(${album.artistIndex}, ${album.albumIndex})">
+        <button class="like-btn liked" onclick="toggleAlbumLike(${album.artistIndex}, ${album.albumIndex}, event)">❤️</button>
+        <img src="${album.cover}" alt="${album.title}">
+        <p class="album-title">${album.title}</p>
+        <p class="album-artist">${album.artistName}</p>
+        <p class="album-date">${album.displayDate}</p>
+      </div>
+    `).join('');
+    
+    html += `
+      <h2 style="color: white; margin-bottom: 20px; font-size: 1.5rem;">❤️ Liked Albums</h2>
+      <div class="albums-grid">${albumsHTML}</div>
+    `;
+  }
+  
+  if (likedSongsData.length > 0) {
+    const songsHTML = likedSongsData.map((track, idx) => `
+      <div class="track-item" onclick="playLikedTrack(${idx})">
+        <span class="track-number">${idx + 1}</span>
+        <span class="track-title">${track.trackTitle}</span>
+        <span style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;">${track.artistName} • ${track.albumTitle}</span>
+        <div class="track-actions">
+          <button class="track-like-btn liked" onclick="toggleTrackLike(${track.artistIdx}, ${track.albumIdx}, ${track.trackIdx}, event)">❤️</button>
+          <span class="play-icon">▶</span>
+        </div>
+      </div>
+    `).join('');
+    
+    html += `
+      <h2 style="color: white; margin: 40px 0 20px; font-size: 1.5rem;">❤️ Liked Songs</h2>
+      <div class="tracks">${songsHTML}</div>
+    `;
+  }
+  
+  viewDiv.innerHTML = html;
+  updateThemedElements(theme);
+}
+
+function playLikedTrack(index) {
+  const likedSongsData = likedSongs.map(key => {
+    const [artistIdx, albumIdx, trackIdx] = key.split('-').map(Number);
+    return { artistIdx, albumIdx, trackIdx };
+  });
+  
+  const track = likedSongsData[index];
+  currentArtistIndex = track.artistIdx;
+  currentAlbumIndex = track.albumIdx;
+  currentTrackIndex = track.trackIdx;
+  
+  applyTheme(currentArtistIndex, currentAlbumIndex);
+  loadTrack();
+  audio.play();
+}
+
 function showTracks(artistIdx, albumIdx) {
   currentArtistIndex = artistIdx;
   currentAlbumIndex = albumIdx;
@@ -1035,30 +1787,46 @@ function showTracks(artistIdx, albumIdx) {
   const album = artist.albums[albumIdx];
   applyTheme(artistIdx, albumIdx);
   
-  // Reset shuffle when changing albums
   if (isShuffleOn) {
     createShuffleOrder();
   }
+  
+  const tracksHTML = album.tracks.map((track, i) => `
+    <div class="track-item" onclick="playTrack(${i})">
+      <span class="track-number">${i + 1}</span>
+      <span class="track-title">${track.title}</span>
+      <div class="track-actions">
+        <button class="track-like-btn ${isTrackLiked(artistIdx, albumIdx, i) ? 'liked' : ''}" 
+                onclick="toggleTrackLike(${artistIdx}, ${albumIdx}, ${i}, event)">
+          ${isTrackLiked(artistIdx, albumIdx, i) ? '❤️' : '🤍'}
+        </button>
+        <span class="play-icon">▶</span>
+      </div>
+    </div>
+  `).join('');
   
   viewDiv.innerHTML = `
     <button class="back-btn" onclick="setView('${currentView}')">← Back</button>
     <div class="track-view">
       <div class="track-header">
         <img src="${album.cover}" alt="${album.title}">
-        <div>
+        <div class="track-header-info">
           <h2>${album.title}</h2>
           <p class="artist-name">${artist.name}</p>
           <p class="release-date">${album.displayDate}</p>
         </div>
+        <div class="track-header-actions">
+          <button class="album-like-btn ${isAlbumLiked(artistIdx, albumIdx) ? 'liked' : ''}" 
+                  onclick="toggleAlbumLike(${artistIdx}, ${albumIdx}, event)">
+            ${isAlbumLiked(artistIdx, albumIdx) ? '❤️ Liked' : '🤍 Like'}
+          </button>
+          <button class="add-to-playlist-btn" onclick="openAddToPlaylistModal(${artistIdx}, ${albumIdx})">
+            ➕ Add to Playlist
+          </button>
+        </div>
       </div>
       <div class="tracks">
-        ${album.tracks.map((track, i) => `
-          <div class="track-item" onclick="playTrack(${i})">
-            <span class="track-number">${i + 1}</span>
-            <span class="track-title">${track.title}</span>
-            <span class="play-icon">▶</span>
-          </div>
-        `).join('')}
+        ${tracksHTML}
       </div>
     </div>
   `;
@@ -1066,11 +1834,9 @@ function showTracks(artistIdx, albumIdx) {
   updateTrackUI();
 }
 
-// Play specific track
 function playTrack(trackIndex) {
   currentTrackIndex = trackIndex;
   
-  // Update shuffle index if shuffle is on
   if (isShuffleOn) {
     shuffleIndex = shuffleOrder.indexOf(trackIndex);
   }
@@ -1079,7 +1845,6 @@ function playTrack(trackIndex) {
   audio.play();
 }
 
-// Load current track
 function loadTrack() {
   const artist = library.artists[currentArtistIndex];
   const album = artist.albums[currentAlbumIndex];
@@ -1091,7 +1856,6 @@ function loadTrack() {
   updateTrackUI();
 }
 
-// Update track list highlighting
 function updateTrackUI() {
   const trackItems = document.querySelectorAll(".track-item");
   const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
@@ -1108,7 +1872,6 @@ function updateTrackUI() {
     }
   });
   
-  // Update track numbers
   document.querySelectorAll('.track-number').forEach((num, i) => {
     if (i === currentTrackIndex) {
       num.style.color = theme.primary;
@@ -1118,7 +1881,6 @@ function updateTrackUI() {
   });
 }
 
-// Play / pause toggle
 function playPause() {
   const playBtn = document.querySelector(".play-pause");
   
@@ -1133,7 +1895,6 @@ function playPause() {
       status.textContent = "⏸ Paused";
     }
   } else {
-    // Load first track if none selected
     currentArtistIndex = 0;
     currentAlbumIndex = 0;
     currentTrackIndex = 0;
@@ -1144,21 +1905,17 @@ function playPause() {
   }
 }
 
-// Shuffle functions
 function createShuffleOrder() {
   const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
   const trackCount = album.tracks.length;
   
-  // Create array of indices
   shuffleOrder = Array.from({length: trackCount}, (_, i) => i);
   
-  // Fisher-Yates shuffle
   for (let i = shuffleOrder.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffleOrder[i], shuffleOrder[j]] = [shuffleOrder[j], shuffleOrder[i]];
   }
   
-  // Find current track in shuffle order
   shuffleIndex = shuffleOrder.indexOf(currentTrackIndex);
 }
 
@@ -1207,7 +1964,6 @@ function toggleRepeat() {
   }
 }
 
-// Next / Prev
 function next() {
   const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
   
@@ -1238,7 +1994,6 @@ function prev() {
   document.querySelector(".play-pause").textContent = "⏸";
 }
 
-// Format time (seconds to mm:ss)
 function formatTime(seconds) {
   if (isNaN(seconds)) return "0:00";
   const mins = Math.floor(seconds / 60);
@@ -1246,7 +2001,6 @@ function formatTime(seconds) {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-// ====== VOLUME CONTROLS ======
 function updateVolumeDisplay() {
   const percent = Math.round(audio.volume * 100);
   volumeFill.style.width = percent + '%';
@@ -1278,7 +2032,6 @@ volumeSlider.addEventListener('click', (e) => {
   updateVolumeDisplay();
 });
 
-// ====== PROGRESS BAR INTERACTION ======
 progressBar.addEventListener('click', (e) => {
   if (!audio.src) return;
   
@@ -1289,7 +2042,6 @@ progressBar.addEventListener('click', (e) => {
   audio.currentTime = newTime;
 });
 
-// ====== AUDIO EVENTS ======
 audio.addEventListener("loadedmetadata", () => {
   durationEl.textContent = formatTime(audio.duration);
 });
@@ -1323,6 +2075,24 @@ audio.addEventListener("pause", () => {
 
 audio.addEventListener("volumechange", () => {
   updateVolumeDisplay();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  
+  switch(e.key) {
+    case ' ':
+      e.preventDefault();
+      playPause();
+      break;
+    case 'ArrowRight':
+      next();
+      break;
+    case 'ArrowLeft':
+      prev();
+      break;
+  }
 });
 
 // Initialize
