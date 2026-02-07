@@ -13,7 +13,6 @@
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #0d3d2b 100%);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -21,6 +20,7 @@
     padding: 20px;
     position: relative;
     overflow-x: hidden;
+    transition: background 0.6s ease;
   }
 
   body::before {
@@ -49,9 +49,9 @@
     border-radius: 24px;
     padding: 40px;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(29, 185, 84, 0.3);
     position: relative;
     z-index: 1;
+    transition: border 0.6s ease;
   }
 
   h1 {
@@ -72,8 +72,7 @@
 
   .view-btn {
     padding: 12px 28px;
-    background: rgba(29, 185, 84, 0.2);
-    border: 1px solid rgba(29, 185, 84, 0.4);
+    border: 1px solid;
     color: white;
     cursor: pointer;
     border-radius: 50px;
@@ -84,14 +83,7 @@
   }
 
   .view-btn:hover {
-    background: rgba(29, 185, 84, 0.4);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(29, 185, 84, 0.3);
-  }
-
-  .view-btn.active {
-    background: #1db954;
-    border: 1px solid rgba(29, 185, 84, 0.8);
   }
 
   /* Albums Grid */
@@ -108,15 +100,12 @@
     padding: 20px;
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 1px solid rgba(29, 185, 84, 0.2);
+    border: 1px solid;
     backdrop-filter: blur(10px);
   }
 
   .album-card:hover {
     transform: translateY(-8px);
-    background: rgba(29, 185, 84, 0.15);
-    box-shadow: 0 12px 24px rgba(29, 185, 84, 0.2);
-    border: 1px solid rgba(29, 185, 84, 0.5);
   }
 
   .album-card img {
@@ -155,7 +144,7 @@
     background: rgba(0, 0, 0, 0.5);
     border-radius: 16px;
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(29, 185, 84, 0.3);
+    border: 1px solid;
   }
 
   .track-header img {
@@ -190,24 +179,12 @@
   }
 
   .track-item:hover {
-    background: rgba(29, 185, 84, 0.15);
     transform: translateX(4px);
-    border: 1px solid rgba(29, 185, 84, 0.3);
-  }
-
-  .track-item.current {
-    background: rgba(29, 185, 84, 0.25);
-    border: 1px solid rgba(29, 185, 84, 0.6);
   }
 
   .track-number {
-    color: rgba(29, 185, 84, 0.7);
     font-weight: 600;
     min-width: 30px;
-  }
-
-  .track-item.current .track-number {
-    color: #1db954;
   }
 
   .track-title {
@@ -235,7 +212,7 @@
   .player-section {
     margin-top: 40px;
     padding-top: 30px;
-    border-top: 1px solid rgba(29, 185, 84, 0.3);
+    border-top: 1px solid;
   }
 
   .now-playing {
@@ -258,18 +235,69 @@
     text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
   }
 
+  /* Progress Bar */
+  .progress-container {
+    margin-bottom: 24px;
+    padding: 0 8px;
+  }
+
+  .time-display {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 4px;
+    transition: width 0.1s linear;
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .progress-bar:hover .progress-fill::after {
+    opacity: 1;
+  }
+
   .player-controls {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
 
   .player-controls button {
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(29, 185, 84, 0.4);
-    color: #1db954;
+    border: 1px solid;
     cursor: pointer;
     border-radius: 50%;
     width: 56px;
@@ -280,47 +308,18 @@
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(10px);
+    color: white;
   }
 
   .player-controls button:hover {
-    background: rgba(29, 185, 84, 0.2);
     transform: scale(1.1);
-    border-color: #1db954;
   }
 
   .player-controls button.play-pause {
     width: 72px;
     height: 72px;
     font-size: 1.8rem;
-    background: #1db954;
-    border: 2px solid rgba(29, 185, 84, 0.8);
-    box-shadow: 0 4px 16px rgba(29, 185, 84, 0.4);
-    color: #000;
-  }
-
-  .player-controls button.play-pause:hover {
-    box-shadow: 0 6px 20px rgba(29, 185, 84, 0.6);
-    background: #1ed760;
-  }
-
-  .audio-player {
-    width: 100%;
-    height: 8px;
-    background: rgba(29, 185, 84, 0.2);
-    border-radius: 4px;
-    margin-bottom: 16px;
-    overflow: hidden;
-  }
-
-  audio {
-    width: 100%;
-    opacity: 0.8;
-    filter: brightness(1.2);
-  }
-
-  audio::-webkit-media-controls-panel {
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
+    border: 2px solid;
   }
 
   .status {
@@ -336,19 +335,22 @@
     gap: 8px;
     padding: 10px 20px;
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(29, 185, 84, 0.4);
-    color: #1db954;
+    border: 1px solid;
     cursor: pointer;
     border-radius: 50px;
     font-size: 0.95rem;
     margin-bottom: 20px;
     transition: all 0.3s ease;
+    color: white;
   }
 
   .back-btn:hover {
-    background: rgba(29, 185, 84, 0.2);
     transform: translateX(-4px);
-    border-color: #1db954;
+  }
+
+  /* Hidden audio element */
+  #audio {
+    display: none;
   }
 
   @media (max-width: 768px) {
@@ -385,19 +387,27 @@
       <div class="now-playing-title" id="nowPlayingTitle">Select a track</div>
     </div>
 
+    <div class="progress-container">
+      <div class="time-display">
+        <span id="currentTime">0:00</span>
+        <span id="duration">0:00</span>
+      </div>
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
     <div class="player-controls">
       <button onclick="prev()" title="Previous">⏮</button>
       <button class="play-pause" onclick="playPause()" title="Play/Pause">▶</button>
       <button onclick="next()" title="Next">⏭</button>
     </div>
 
-    <div class="audio-player">
-      <audio id="audio" controls></audio>
-    </div>
-
     <p class="status" id="status">Ready to play</p>
   </div>
 </div>
+
+<audio id="audio"></audio>
 
 <script>
 // ====== DATA ======
@@ -405,6 +415,12 @@ const albums = [
   {
     title: "Nevermind — Nirvana",
     cover: "https://upload.wikimedia.org/wikipedia/en/b/b7/NirvanaNevermindalbumcover.jpg",
+    theme: {
+      background: "linear-gradient(135deg, #1e3a5f 0%, #2d5a8c 50%, #4a7ba7 100%)",
+      primary: "#4a7ba7",
+      primaryRgb: "74, 123, 167",
+      accent: "#6ba3d4"
+    },
     tracks: [
       {title: "Smells Like Teen Spirit", file: "audio/smells_like_teen_spirit.mp3"},
       {title: "In Bloom", file: "audio/in_bloom.mp3"},
@@ -419,6 +435,29 @@ const albums = [
       {title: "On A Plain", file: "audio/on_a_plain.m4a"},
       {title: "Something In The Way", file: "audio/something_in_the_way.m4a"},
     ]
+  },
+  {
+    title: "Bleach — Nirvana",
+    cover: "https://upload.wikimedia.org/wikipedia/en/4/45/Nirvana-Bleach.jpg",
+    theme: {
+      background: "linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #2d2d2d 100%)",
+      primary: "#ffffff",
+      primaryRgb: "255, 255, 255",
+      accent: "#cccccc"
+    },
+    tracks: [
+      {title: "Blew", file: "audio/blew.mp3"},
+      {title: "Floyd the Barber", file: "audio/floyd_the_barber.mp3"},
+      {title: "About a Girl", file: "audio/about_a_girl.mp3"},
+      {title: "School", file: "audio/school.mp3"},
+      {title: "Love Buzz", file: "audio/love_buzz.mp3"},
+      {title: "Paper Cuts", file: "audio/paper_cuts.mp3"},
+      {title: "Negative Creep", file: "audio/negative_creep.mp3"},
+      {title: "Scoff", file: "audio/scoff.mp3"},
+      {title: "Swap Meet", file: "audio/swap_meet.mp3"},
+      {title: "Mr. Moustache", file: "audio/mr_moustache.mp3"},
+      {title: "Sifting", file: "audio/sifting.mp3"},
+    ]
   }
 ];
 
@@ -428,6 +467,97 @@ const audio = document.getElementById("audio");
 const viewDiv = document.getElementById("view");
 const status = document.getElementById("status");
 const nowPlayingTitle = document.getElementById("nowPlayingTitle");
+const progressBar = document.getElementById("progressBar");
+const progressFill = document.getElementById("progressFill");
+const currentTimeEl = document.getElementById("currentTime");
+const durationEl = document.getElementById("duration");
+
+// ====== THEME FUNCTIONS ======
+function applyTheme(albumIndex) {
+  const theme = albums[albumIndex].theme;
+  document.body.style.background = theme.background;
+  
+  // Update CSS custom properties for dynamic theming
+  document.documentElement.style.setProperty('--primary-color', theme.primary);
+  document.documentElement.style.setProperty('--primary-rgb', theme.primaryRgb);
+  document.documentElement.style.setProperty('--accent-color', theme.accent);
+  
+  // Update container border
+  const container = document.querySelector('.container');
+  container.style.borderColor = `rgba(${theme.primaryRgb}, 0.3)`;
+  
+  // Update all themed elements
+  updateThemedElements(theme);
+}
+
+function updateThemedElements(theme) {
+  // View buttons
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.style.background = `rgba(${theme.primaryRgb}, 0.2)`;
+    btn.style.borderColor = `rgba(${theme.primaryRgb}, 0.4)`;
+    if (btn.classList.contains('active')) {
+      btn.style.background = theme.primary;
+      btn.style.borderColor = `rgba(${theme.primaryRgb}, 0.8)`;
+      btn.style.color = theme.primary === '#ffffff' ? '#000' : '#fff';
+    }
+  });
+  
+  // Album cards
+  document.querySelectorAll('.album-card').forEach(card => {
+    card.style.borderColor = `rgba(${theme.primaryRgb}, 0.2)`;
+  });
+  
+  // Track items
+  document.querySelectorAll('.track-item').forEach(item => {
+    if (item.classList.contains('current')) {
+      item.style.background = `rgba(${theme.primaryRgb}, 0.25)`;
+      item.style.borderColor = `rgba(${theme.primaryRgb}, 0.6)`;
+    }
+  });
+  
+  // Track numbers
+  document.querySelectorAll('.track-number').forEach(num => {
+    num.style.color = `rgba(${theme.primaryRgb}, 0.7)`;
+  });
+  
+  document.querySelectorAll('.track-item.current .track-number').forEach(num => {
+    num.style.color = theme.primary;
+  });
+  
+  // Player section
+  const playerSection = document.querySelector('.player-section');
+  if (playerSection) {
+    playerSection.style.borderTopColor = `rgba(${theme.primaryRgb}, 0.3)`;
+  }
+  
+  // Player controls
+  document.querySelectorAll('.player-controls button').forEach(btn => {
+    btn.style.borderColor = `rgba(${theme.primaryRgb}, 0.4)`;
+    btn.style.color = theme.primary;
+    
+    if (btn.classList.contains('play-pause')) {
+      btn.style.background = theme.primary;
+      btn.style.color = theme.primary === '#ffffff' ? '#000' : '#fff';
+      btn.style.boxShadow = `0 4px 16px rgba(${theme.primaryRgb}, 0.4)`;
+    }
+  });
+  
+  // Progress bar
+  progressFill.style.background = theme.primary;
+  
+  // Back button
+  const backBtn = document.querySelector('.back-btn');
+  if (backBtn) {
+    backBtn.style.borderColor = `rgba(${theme.primaryRgb}, 0.4)`;
+    backBtn.style.color = theme.primary;
+  }
+  
+  // Track header
+  const trackHeader = document.querySelector('.track-header');
+  if (trackHeader) {
+    trackHeader.style.borderColor = `rgba(${theme.primaryRgb}, 0.3)`;
+  }
+}
 
 // ====== FUNCTIONS ======
 
@@ -443,12 +573,14 @@ function showAlbums() {
       `).join('')}
     </div>
   `;
+  updateThemedElements(albums[currentAlbumIndex].theme);
 }
 
 // Show tracks for an album
 function showTracks(albumIndex) {
   currentAlbumIndex = albumIndex;
   const album = albums[albumIndex];
+  applyTheme(albumIndex);
   
   viewDiv.innerHTML = `
     <button class="back-btn" onclick="showAlbums()">← Back to Albums</button>
@@ -492,11 +624,26 @@ function loadTrack() {
 // Update track list highlighting
 function updateTrackUI() {
   const trackItems = document.querySelectorAll(".track-item");
+  const theme = albums[currentAlbumIndex].theme;
+  
   trackItems.forEach((el, i) => {
     if (i === currentTrackIndex) {
       el.classList.add("current");
+      el.style.background = `rgba(${theme.primaryRgb}, 0.25)`;
+      el.style.borderColor = `rgba(${theme.primaryRgb}, 0.6)`;
     } else {
       el.classList.remove("current");
+      el.style.background = "rgba(0, 0, 0, 0.3)";
+      el.style.borderColor = "transparent";
+    }
+  });
+  
+  // Update track numbers
+  document.querySelectorAll('.track-number').forEach((num, i) => {
+    if (i === currentTrackIndex) {
+      num.style.color = theme.primary;
+    } else {
+      num.style.color = `rgba(${theme.primaryRgb}, 0.7)`;
     }
   });
 }
@@ -519,6 +666,7 @@ function playPause() {
     // Load first track if none selected
     currentAlbumIndex = 0;
     currentTrackIndex = 0;
+    applyTheme(0);
     loadTrack();
     audio.play();
     playBtn.textContent = "⏸";
@@ -542,7 +690,38 @@ function prev() {
   document.querySelector(".play-pause").textContent = "⏸";
 }
 
+// Format time (seconds to mm:ss)
+function formatTime(seconds) {
+  if (isNaN(seconds)) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// ====== PROGRESS BAR INTERACTION ======
+progressBar.addEventListener('click', (e) => {
+  if (!audio.src) return;
+  
+  const rect = progressBar.getBoundingClientRect();
+  const percent = (e.clientX - rect.left) / rect.width;
+  const newTime = percent * audio.duration;
+  
+  audio.currentTime = newTime;
+});
+
 // ====== AUDIO EVENTS ======
+audio.addEventListener("loadedmetadata", () => {
+  durationEl.textContent = formatTime(audio.duration);
+});
+
+audio.addEventListener("timeupdate", () => {
+  if (audio.duration) {
+    const percent = (audio.currentTime / audio.duration) * 100;
+    progressFill.style.width = percent + '%';
+    currentTimeEl.textContent = formatTime(audio.currentTime);
+  }
+});
+
 audio.addEventListener("ended", () => {
   next();
 });
@@ -558,6 +737,7 @@ audio.addEventListener("pause", () => {
 });
 
 // Initialize
+applyTheme(0);
 showAlbums();
 </script>
 
