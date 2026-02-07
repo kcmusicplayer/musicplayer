@@ -1140,6 +1140,7 @@ let currentArtistIndex = 0;
 let currentAlbumIndex = 0;
 let currentTrackIndex = 0;
 let currentPlaylistId = null;
+let currentPlaylistIndex = -1; // Track position in playlist
 const audio = document.getElementById("audio");
 const viewDiv = document.getElementById("view");
 const status = document.getElementById("status");
@@ -1415,6 +1416,10 @@ function showPlaylist(playlistId) {
 function playPlaylistTrack(playlistId, trackIndex) {
   const playlist = playlists.find(p => p.id === playlistId);
   const track = playlist.tracks[trackIndex];
+  
+  // Set playlist context
+  currentPlaylistId = playlistId;
+  currentPlaylistIndex = trackIndex;
   
   currentArtistIndex = track.artistIdx;
   currentAlbumIndex = track.albumIdx;
@@ -1771,6 +1776,11 @@ function playLikedTrack(index) {
   });
   
   const track = likedSongsData[index];
+  
+  // Clear playlist context when playing from liked songs
+  currentPlaylistId = null;
+  currentPlaylistIndex = -1;
+  
   currentArtistIndex = track.artistIdx;
   currentAlbumIndex = track.albumIdx;
   currentTrackIndex = track.trackIdx;
@@ -1781,6 +1791,10 @@ function playLikedTrack(index) {
 }
 
 function showTracks(artistIdx, albumIdx) {
+  // Clear playlist context when viewing an album
+  currentPlaylistId = null;
+  currentPlaylistIndex = -1;
+  
   currentArtistIndex = artistIdx;
   currentAlbumIndex = albumIdx;
   const artist = library.artists[artistIdx];
@@ -1835,6 +1849,10 @@ function showTracks(artistIdx, albumIdx) {
 }
 
 function playTrack(trackIndex) {
+  // Clear playlist context when playing from an album
+  currentPlaylistId = null;
+  currentPlaylistIndex = -1;
+  
   currentTrackIndex = trackIndex;
   
   if (isShuffleOn) {
@@ -1898,6 +1916,8 @@ function playPause() {
     currentArtistIndex = 0;
     currentAlbumIndex = 0;
     currentTrackIndex = 0;
+    currentPlaylistId = null;
+    currentPlaylistIndex = -1;
     applyTheme(0, 0);
     loadTrack();
     audio.play();
@@ -1965,6 +1985,41 @@ function toggleRepeat() {
 }
 
 function next() {
+  // Check if we're in playlist mode
+  if (currentPlaylistId) {
+    const playlist = playlists.find(p => p.id === currentPlaylistId);
+    if (playlist && currentPlaylistIndex < playlist.tracks.length - 1) {
+      // Move to next track in playlist
+      currentPlaylistIndex++;
+      const track = playlist.tracks[currentPlaylistIndex];
+      
+      currentArtistIndex = track.artistIdx;
+      currentAlbumIndex = track.albumIdx;
+      currentTrackIndex = track.trackIdx;
+      
+      applyTheme(currentArtistIndex, currentAlbumIndex);
+      loadTrack();
+      audio.play();
+      document.querySelector(".play-pause").textContent = "⏸";
+      return;
+    } else if (playlist && repeatMode === 'all') {
+      // Loop back to start of playlist
+      currentPlaylistIndex = 0;
+      const track = playlist.tracks[currentPlaylistIndex];
+      
+      currentArtistIndex = track.artistIdx;
+      currentAlbumIndex = track.albumIdx;
+      currentTrackIndex = track.trackIdx;
+      
+      applyTheme(currentArtistIndex, currentAlbumIndex);
+      loadTrack();
+      audio.play();
+      document.querySelector(".play-pause").textContent = "⏸";
+      return;
+    }
+  }
+  
+  // Regular album mode
   const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
   
   if (isShuffleOn) {
@@ -1980,6 +2035,41 @@ function next() {
 }
 
 function prev() {
+  // Check if we're in playlist mode
+  if (currentPlaylistId) {
+    const playlist = playlists.find(p => p.id === currentPlaylistId);
+    if (playlist && currentPlaylistIndex > 0) {
+      // Move to previous track in playlist
+      currentPlaylistIndex--;
+      const track = playlist.tracks[currentPlaylistIndex];
+      
+      currentArtistIndex = track.artistIdx;
+      currentAlbumIndex = track.albumIdx;
+      currentTrackIndex = track.trackIdx;
+      
+      applyTheme(currentArtistIndex, currentAlbumIndex);
+      loadTrack();
+      audio.play();
+      document.querySelector(".play-pause").textContent = "⏸";
+      return;
+    } else if (playlist && repeatMode === 'all') {
+      // Loop to end of playlist
+      currentPlaylistIndex = playlist.tracks.length - 1;
+      const track = playlist.tracks[currentPlaylistIndex];
+      
+      currentArtistIndex = track.artistIdx;
+      currentAlbumIndex = track.albumIdx;
+      currentTrackIndex = track.trackIdx;
+      
+      applyTheme(currentArtistIndex, currentAlbumIndex);
+      loadTrack();
+      audio.play();
+      document.querySelector(".play-pause").textContent = "⏸";
+      return;
+    }
+  }
+  
+  // Regular album mode
   const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
   
   if (isShuffleOn) {
@@ -2059,6 +2149,7 @@ audio.addEventListener("ended", () => {
     audio.currentTime = 0;
     audio.play();
   } else {
+    // This will now properly handle playlist context
     next();
   }
 });
