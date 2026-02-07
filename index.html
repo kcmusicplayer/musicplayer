@@ -123,6 +123,14 @@
     font-size: 1.1rem;
     text-align: center;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    margin-bottom: 8px;
+  }
+
+  .album-date {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    font-weight: 400;
+    text-align: center;
   }
 
   /* Track List */
@@ -158,6 +166,13 @@
     color: white;
     font-size: 2rem;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    margin-bottom: 8px;
+  }
+
+  .track-header .release-date {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
+    font-weight: 400;
   }
 
   .tracks {
@@ -495,6 +510,7 @@ const albums = [
   {
     title: "Nevermind — Nirvana",
     cover: "https://upload.wikimedia.org/wikipedia/en/b/b7/NirvanaNevermindalbumcover.jpg",
+    releaseDate: "September 24, 1991",
     theme: {
       background: "linear-gradient(135deg, #1e3a5f 0%, #2d5a8c 50%, #4a7ba7 100%)",
       primary: "#4a7ba7",
@@ -519,6 +535,7 @@ const albums = [
   {
     title: "Bleach — Nirvana",
     cover: "71ThvtmT-FL._SL1417_.jpg",
+    releaseDate: "June 15, 1989",
     theme: {
       background: "linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #2d2d2d 100%)",
       primary: "#ffffff",
@@ -539,6 +556,31 @@ const albums = [
       {title: "Sifting", file: "audio/sift.m4a"},
       {title: "Big Cheese", file: "audio/bigcheese.m4a"},
       {title: "Downer", file: "audio/down.m4a"},
+    ]
+  },
+  {
+    title: "In Utero — Nirvana",
+    cover: "https://upload.wikimedia.org/wikipedia/en/e/ee/Nirvana_-_In_Utero.png",
+    releaseDate: "September 21, 1993",
+    theme: {
+      background: "linear-gradient(135deg, #8B0000 0%, #A52A2A 50%, #CD5C5C 100%)",
+      primary: "#CD5C5C",
+      primaryRgb: "205, 92, 92",
+      accent: "#DC143C"
+    },
+    tracks: [
+      {title: "Serve The Servants", file: "audio/serve.m4a"},
+      {title: "Scentless Apprentice", file: "audio/scentless.m4a"},
+      {title: "Heart Shaped Box", file: "audio/heart.m4a"},
+      {title: "Rape Me", file: "audio/me.m4a"},
+      {title: "Frances Farmer Will Have Her Revenge On Seattle", file: "audio/frances.m4a"},
+      {title: "Dumb", file: "audio/dumb.m4a"},
+      {title: "Very Ape", file: "audio/very.m4a"},
+      {title: "Milk It", file: "audio/milk.m4a"},
+      {title: "Pennyroyal Tea", file: "audio/penny.m4a"},
+      {title: "Radio Friendly Unit Shifter", file: "audio/radio.m4a"},
+      {title: "Tourette's", file: "audio/tour.m4a"},
+      {title: "All Apologies", file: "audio/apologies.m4a"},
     ]
   }
 ];
@@ -662,6 +704,7 @@ function showAlbums() {
         <div class="album-card" onclick="showTracks(${i})">
           <img src="${album.cover}" alt="${album.title}">
           <p>${album.title}</p>
+          <p class="album-date">${album.releaseDate}</p>
         </div>
       `).join('')}
     </div>
@@ -680,7 +723,10 @@ function showTracks(albumIndex) {
     <div class="track-view">
       <div class="track-header">
         <img src="${album.cover}" alt="${album.title}">
-        <h2>${album.title}</h2>
+        <div>
+          <h2>${album.title}</h2>
+          <p class="release-date">${album.releaseDate}</p>
+        </div>
       </div>
       <div class="tracks">
         ${album.tracks.map((track, i) => `
