@@ -647,9 +647,11 @@
     </div>
 
     <div class="player-controls">
+      <button onclick="toggleShuffle()" id="shuffleBtn" title="Shuffle">🔀</button>
       <button onclick="prev()" title="Previous">⏮</button>
       <button class="play-pause" onclick="playPause()" title="Play/Pause">▶</button>
       <button onclick="next()" title="Next">⏭</button>
+      <button onclick="toggleRepeat()" id="repeatBtn" title="Repeat Off">🔁</button>
     </div>
 
     <p class="status" id="status">Ready to play</p>
@@ -793,6 +795,10 @@ const volumeIcon = document.getElementById("volumeIcon");
 // Initialize volume
 audio.volume = 1.0;
 let previousVolume = 1.0;
+let isShuffleOn = false;
+let repeatMode = 'off'; // 'off', 'all', 'one'
+let shuffleOrder = [];
+let shuffleIndex = 0;
 
 // ====== HELPER FUNCTIONS ======
 function getAllAlbums() {
@@ -1029,6 +1035,11 @@ function showTracks(artistIdx, albumIdx) {
   const album = artist.albums[albumIdx];
   applyTheme(artistIdx, albumIdx);
   
+  // Reset shuffle when changing albums
+  if (isShuffleOn) {
+    createShuffleOrder();
+  }
+  
   viewDiv.innerHTML = `
     <button class="back-btn" onclick="setView('${currentView}')">← Back</button>
     <div class="track-view">
@@ -1058,6 +1069,12 @@ function showTracks(artistIdx, albumIdx) {
 // Play specific track
 function playTrack(trackIndex) {
   currentTrackIndex = trackIndex;
+  
+  // Update shuffle index if shuffle is on
+  if (isShuffleOn) {
+    shuffleIndex = shuffleOrder.indexOf(trackIndex);
+  }
+  
   loadTrack();
   audio.play();
 }
@@ -1127,10 +1144,80 @@ function playPause() {
   }
 }
 
+// Shuffle functions
+function createShuffleOrder() {
+  const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
+  const trackCount = album.tracks.length;
+  
+  // Create array of indices
+  shuffleOrder = Array.from({length: trackCount}, (_, i) => i);
+  
+  // Fisher-Yates shuffle
+  for (let i = shuffleOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffleOrder[i], shuffleOrder[j]] = [shuffleOrder[j], shuffleOrder[i]];
+  }
+  
+  // Find current track in shuffle order
+  shuffleIndex = shuffleOrder.indexOf(currentTrackIndex);
+}
+
+function toggleShuffle() {
+  isShuffleOn = !isShuffleOn;
+  const shuffleBtn = document.getElementById('shuffleBtn');
+  const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
+  
+  if (isShuffleOn) {
+    createShuffleOrder();
+    shuffleBtn.style.background = theme.primary;
+    shuffleBtn.style.color = theme.primary === '#ffffff' ? '#000' : '#fff';
+    shuffleBtn.title = 'Shuffle On';
+    status.textContent = '🔀 Shuffle On';
+  } else {
+    shuffleBtn.style.background = 'rgba(0, 0, 0, 0.5)';
+    shuffleBtn.style.color = theme.primary;
+    shuffleBtn.title = 'Shuffle';
+    status.textContent = '🔀 Shuffle Off';
+  }
+}
+
+function toggleRepeat() {
+  const repeatBtn = document.getElementById('repeatBtn');
+  const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
+  
+  if (repeatMode === 'off') {
+    repeatMode = 'all';
+    repeatBtn.textContent = '🔁';
+    repeatBtn.style.background = theme.primary;
+    repeatBtn.style.color = theme.primary === '#ffffff' ? '#000' : '#fff';
+    repeatBtn.title = 'Repeat All';
+    status.textContent = '🔁 Repeat All';
+  } else if (repeatMode === 'all') {
+    repeatMode = 'one';
+    repeatBtn.textContent = '🔂';
+    repeatBtn.title = 'Repeat One';
+    status.textContent = '🔂 Repeat One';
+  } else {
+    repeatMode = 'off';
+    repeatBtn.textContent = '🔁';
+    repeatBtn.style.background = 'rgba(0, 0, 0, 0.5)';
+    repeatBtn.style.color = theme.primary;
+    repeatBtn.title = 'Repeat Off';
+    status.textContent = '🔁 Repeat Off';
+  }
+}
+
 // Next / Prev
 function next() {
   const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
-  currentTrackIndex = (currentTrackIndex + 1) % album.tracks.length;
+  
+  if (isShuffleOn) {
+    shuffleIndex = (shuffleIndex + 1) % shuffleOrder.length;
+    currentTrackIndex = shuffleOrder[shuffleIndex];
+  } else {
+    currentTrackIndex = (currentTrackIndex + 1) % album.tracks.length;
+  }
+  
   loadTrack();
   audio.play();
   document.querySelector(".play-pause").textContent = "⏸";
@@ -1138,7 +1225,14 @@ function next() {
 
 function prev() {
   const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
-  currentTrackIndex = (currentTrackIndex - 1 + album.tracks.length) % album.tracks.length;
+  
+  if (isShuffleOn) {
+    shuffleIndex = (shuffleIndex - 1 + shuffleOrder.length) % shuffleOrder.length;
+    currentTrackIndex = shuffleOrder[shuffleIndex];
+  } else {
+    currentTrackIndex = (currentTrackIndex - 1 + album.tracks.length) % album.tracks.length;
+  }
+  
   loadTrack();
   audio.play();
   document.querySelector(".play-pause").textContent = "⏸";
@@ -1209,7 +1303,12 @@ audio.addEventListener("timeupdate", () => {
 });
 
 audio.addEventListener("ended", () => {
-  next();
+  if (repeatMode === 'one') {
+    audio.currentTime = 0;
+    audio.play();
+  } else {
+    next();
+  }
 });
 
 audio.addEventListener("play", () => {
