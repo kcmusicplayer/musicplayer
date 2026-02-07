@@ -329,6 +329,74 @@
     margin-top: 12px;
   }
 
+  /* Volume Control */
+  .volume-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 24px;
+    padding: 0 20px;
+  }
+
+  .volume-icon {
+    color: white;
+    font-size: 1.2rem;
+    min-width: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  .volume-icon:hover {
+    transform: scale(1.1);
+  }
+
+  .volume-slider {
+    width: 200px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .volume-fill {
+    height: 100%;
+    width: 100%;
+    border-radius: 4px;
+    transition: width 0.1s ease;
+    position: relative;
+  }
+
+  .volume-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 14px;
+    height: 14px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+    transition: opacity 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+
+  .volume-slider:hover .volume-fill::after {
+    opacity: 1;
+  }
+
+  .volume-percentage {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-width: 40px;
+    text-align: right;
+  }
+
   .back-btn {
     display: inline-flex;
     align-items: center;
@@ -371,6 +439,10 @@
       flex-direction: column;
       text-align: center;
     }
+
+    .volume-slider {
+      width: 120px;
+    }
   }
 </style>
 </head>
@@ -404,6 +476,14 @@
     </div>
 
     <p class="status" id="status">Ready to play</p>
+
+    <div class="volume-control">
+      <span class="volume-icon" onclick="toggleMute()" id="volumeIcon">🔊</span>
+      <div class="volume-slider" id="volumeSlider">
+        <div class="volume-fill" id="volumeFill"></div>
+      </div>
+      <span class="volume-percentage" id="volumePercentage">100%</span>
+    </div>
   </div>
 </div>
 
@@ -473,6 +553,14 @@ const progressBar = document.getElementById("progressBar");
 const progressFill = document.getElementById("progressFill");
 const currentTimeEl = document.getElementById("currentTime");
 const durationEl = document.getElementById("duration");
+const volumeSlider = document.getElementById("volumeSlider");
+const volumeFill = document.getElementById("volumeFill");
+const volumePercentage = document.getElementById("volumePercentage");
+const volumeIcon = document.getElementById("volumeIcon");
+
+// Initialize volume
+audio.volume = 1.0;
+let previousVolume = 1.0;
 
 // ====== THEME FUNCTIONS ======
 function applyTheme(albumIndex) {
@@ -546,6 +634,9 @@ function updateThemedElements(theme) {
   
   // Progress bar
   progressFill.style.background = theme.primary;
+  
+  // Volume bar
+  volumeFill.style.background = theme.primary;
   
   // Back button
   const backBtn = document.querySelector('.back-btn');
@@ -700,6 +791,39 @@ function formatTime(seconds) {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
+// ====== VOLUME CONTROLS ======
+function updateVolumeDisplay() {
+  const percent = Math.round(audio.volume * 100);
+  volumeFill.style.width = percent + '%';
+  volumePercentage.textContent = percent + '%';
+  
+  // Update volume icon
+  if (audio.volume === 0) {
+    volumeIcon.textContent = '🔇';
+  } else if (audio.volume < 0.5) {
+    volumeIcon.textContent = '🔉';
+  } else {
+    volumeIcon.textContent = '🔊';
+  }
+}
+
+function toggleMute() {
+  if (audio.volume > 0) {
+    previousVolume = audio.volume;
+    audio.volume = 0;
+  } else {
+    audio.volume = previousVolume;
+  }
+  updateVolumeDisplay();
+}
+
+volumeSlider.addEventListener('click', (e) => {
+  const rect = volumeSlider.getBoundingClientRect();
+  const percent = (e.clientX - rect.left) / rect.width;
+  audio.volume = Math.max(0, Math.min(1, percent));
+  updateVolumeDisplay();
+});
+
 // ====== PROGRESS BAR INTERACTION ======
 progressBar.addEventListener('click', (e) => {
   if (!audio.src) return;
@@ -738,9 +862,14 @@ audio.addEventListener("pause", () => {
   status.textContent = "⏸ Paused";
 });
 
+audio.addEventListener("volumechange", () => {
+  updateVolumeDisplay();
+});
+
 // Initialize
 applyTheme(0);
 showAlbums();
+updateVolumeDisplay();
 </script>
 
 </body>
