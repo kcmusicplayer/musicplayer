@@ -1314,6 +1314,7 @@ let isShuffleOn = false;
 let repeatMode = 'off';
 let shuffleOrder = [];
 let shuffleIndex = 0;
+let currentShuffleContext = null; 
 
 // ====== AUTHENTICATION ======
 auth.onAuthStateChanged(async (user) => {
@@ -1740,6 +1741,9 @@ function playPlaylistTrack(playlistId, trackIndex) {
   applyTheme(currentArtistIndex, currentAlbumIndex);
   loadTrack();
   audio.play();
+
+ if (isShuffleOn) {
+  createShuffleOrder();
 }
 
 // ====== THEME FUNCTIONS ======
@@ -2095,9 +2099,12 @@ function showTracks(artistIdx, albumIdx) {
   const album = artist.albums[albumIdx];
   applyTheme(artistIdx, albumIdx);
   
-  if (isShuffleOn) {
+if (isShuffleOn) {
+  const newContext = `album-${artistIdx}-${albumIdx}`;
+  if (currentShuffleContext !== newContext) {
     createShuffleOrder();
   }
+}
   
   const tracksHTML = album.tracks.map((track, i) => `
     <div class="track-item" onclick="playTrack(${i})">
@@ -2223,17 +2230,29 @@ function playPause() {
 }
 
 function createShuffleOrder() {
-  const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
-  const trackCount = album.tracks.length;
-  
-  shuffleOrder = Array.from({length: trackCount}, (_, i) => i);
-  
+  let trackCount = 0;
+
+  if (currentPlaylistId) {
+    const playlist = playlists.find(p => p.id === currentPlaylistId);
+    if (!playlist) return;
+    trackCount = playlist.tracks.length;
+    currentShuffleContext = `playlist-${currentPlaylistId}`;
+  } else {
+    const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
+    trackCount = album.tracks.length;
+    currentShuffleContext = `album-${currentArtistIndex}-${currentAlbumIndex}`;
+  }
+
+  shuffleOrder = Array.from({ length: trackCount }, (_, i) => i);
+
   for (let i = shuffleOrder.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [shuffleOrder[i], shuffleOrder[j]] = [shuffleOrder[j], shuffleOrder[i]];
   }
-  
-  shuffleIndex = shuffleOrder.indexOf(currentTrackIndex);
+
+  shuffleIndex = shuffleOrder.indexOf(
+    currentPlaylistId ? currentPlaylistIndex : currentTrackIndex
+  );
 }
 
 function toggleShuffle() {
@@ -2252,6 +2271,7 @@ function toggleShuffle() {
     shuffleBtn.style.color = theme.primary;
     shuffleBtn.title = 'Shuffle';
     status.textContent = '🔀 Shuffle Off';
+    currentShuffleContext = null;
   }
 }
 
