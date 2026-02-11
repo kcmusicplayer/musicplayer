@@ -1,5 +1,6 @@
 <!-- ========================================
-     PART 1 OF 3 - COPY THIS ENTIRE SECTION
+     PART 1 OF 3 - NO LOGIN VERSION
+     COPY THIS ENTIRE SECTION
      ======================================== -->
 
 <!DOCTYPE html>
@@ -45,58 +46,6 @@
     100% { transform: translate(50px, 50px); }
   }
 
-  /* Auth Screen */
-  .auth-container {
-    max-width: 450px;
-    width: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(20px);
-    border-radius: 24px;
-    padding: 60px 40px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .auth-container h1 {
-    color: white;
-    font-size: 2.5rem;
-    margin-bottom: 16px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-  }
-
-  .auth-container p {
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 1.1rem;
-    margin-bottom: 40px;
-  }
-
-  .google-signin-btn {
-    background: white;
-    color: #333;
-    border: none;
-    border-radius: 50px;
-    padding: 16px 32px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-  }
-
-  .google-signin-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0,0,0,0.3);
-  }
-
-  .google-icon {
-    width: 24px;
-    height: 24px;
-  }
-
   .container {
     max-width: 1200px;
     width: 100%;
@@ -108,69 +57,6 @@
     position: relative;
     z-index: 1;
     transition: border 0.6s ease;
-    display: none;
-  }
-
-  .container.active {
-    display: block;
-  }
-
-  /* User Profile Section */
-  .user-profile {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    padding: 16px 20px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-  }
-
-  .user-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .user-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-  }
-
-  .user-details {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .user-name {
-    color: white;
-    font-weight: 600;
-    font-size: 1rem;
-  }
-
-  .user-email {
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 0.85rem;
-  }
-
-  .signout-btn {
-    background: rgba(220, 38, 38, 0.2);
-    border: 1px solid rgba(220, 38, 38, 0.5);
-    border-radius: 50px;
-    padding: 10px 20px;
-    color: #dc2626;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-  }
-
-  .signout-btn:hover {
-    background: rgba(220, 38, 38, 0.4);
-    transform: translateY(-2px);
   }
 
   h1 {
@@ -1063,34 +949,229 @@
       height: 50px;
       font-size: 1.4rem;
     }
-
-    .user-profile {
-      flex-direction: column;
-      gap: 12px;
-    }
   }
 </style>
 </head>
 <body>
 
-<!-- Auth Screen -->
-<div class="auth-container" id="authContainer">
+<!-- Main App -->
+<div class="container">
   <h1>🎵 Music Player</h1>
-  <p>Sign in to save your playlists, liked songs, and preferences</p>
-  <button class="google-signin-btn" onclick="signInWithGoogle()">
-    <svg class="google-icon" viewBox="0 0 24 24">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-    </svg>
-    Continue with Google
-  </button>
+
+  <div class="view-controls">
+    <button class="view-btn active" onclick="setView('artists')">By Artist</button>
+    <button class="view-btn" onclick="setView('albums')">All Albums</button>
+    <button class="view-btn" onclick="setView('chronological')">Chronological</button>
+    <button class="view-btn" onclick="setView('playlists')">📝 Playlists</button>
+    <button class="view-btn" onclick="setView('liked')">❤️ Liked</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="player-section">
+    <div class="now-playing">
+      <div class="now-playing-label">Now Playing</div>
+      <div class="now-playing-title" id="nowPlayingTitle">Select a track</div>
+      <div class="now-playing-artist" id="nowPlayingArtist"></div>
+    </div>
+
+    <div class="progress-container">
+      <div class="time-display">
+        <span id="currentTime">0:00</span>
+        <span id="duration">0:00</span>
+      </div>
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="player-controls">
+      <button onclick="toggleShuffle()" id="shuffleBtn" title="Shuffle">🔀</button>
+      <button onclick="prev()" title="Previous">⏮</button>
+      <button class="play-pause" onclick="playPause()" title="Play/Pause">▶</button>
+      <button onclick="next()" title="Next">⏭</button>
+      <button onclick="toggleRepeat()" id="repeatBtn" title="Repeat Off">🔁</button>
+    </div>
+
+    <p class="status" id="status">Ready to play</p>
+
+    <div class="volume-control">
+      <span class="volume-icon" onclick="toggleMute()" id="volumeIcon">🔊</span>
+      <div class="volume-slider" id="volumeSlider">
+        <div class="volume-fill" id="volumeFill"></div>
+      </div>
+      <span class="volume-percentage" id="volumePercentage">100%</span>
+    </div>
+  </div>
 </div>
 
-<!-- END OF PART 1 -->
+<!-- Create Playlist Modal -->
+<div class="modal" id="createPlaylistModal">
+  <div class="modal-content">
+    <h2 id="createPlaylistModalTitle">Create New Playlist</h2>
+    <input type="text" class="modal-input" id="playlistNameInput" placeholder="Playlist name">
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeCreatePlaylistModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="confirmCreatePlaylist()">Create</button>
+    </div>
+  </div>
+</div>
 
- <!-- ========================================
+<!-- Add to Playlist Modal -->
+<div class="modal" id="addToPlaylistModal">
+  <div class="modal-content">
+    <h2>Add to Playlist</h2>
+    <div class="playlist-select-list" id="playlistSelectList"></div>
+    <div class="modal-buttons">
+      <button class="modal-btn secondary" onclick="closeAddToPlaylistModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<audio id="audio"></audio>
+
+<script>
+// ====== DATA ======
+const library = {
+  artists: [
+    {
+      name: "Nirvana",
+      albums: [
+        {
+          title: "Bleach",
+          cover: "71ThvtmT-FL._SL1417_.jpg",
+          releaseDate: "1989-06-15",
+          displayDate: "June 15, 1989",
+          theme: {
+            background: "linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #2d2d2d 100%)",
+            primary: "#ffffff",
+            primaryRgb: "255, 255, 255",
+            accent: "#cccccc"
+          },
+          tracks: [
+            {title: "Blew", file: "audio/blew.m4a"},
+            {title: "Floyd the Barber", file: "audio/barber.m4a"},
+            {title: "About a Girl", file: "audio/abt.m4a"},
+            {title: "School", file: "audio/school.m4a"},
+            {title: "Love Buzz", file: "audio/lovebuzz.m4a"},
+            {title: "Paper Cuts", file: "audio/paper.m4a"},
+            {title: "Negative Creep", file: "audio/negative.m4a"},
+            {title: "Scoff", file: "audio/scoff.m4a"},
+            {title: "Swap Meet", file: "audio/swap.m4a"},
+            {title: "Mr. Moustache", file: "audio/mrm.m4a"},
+            {title: "Sifting", file: "audio/sift.m4a"},
+            {title: "Big Cheese", file: "audio/bigcheese.m4a"},
+            {title: "Downer", file: "audio/down.m4a"},
+          ]
+        },
+        {
+          title: "Nevermind",
+          cover: "https://upload.wikimedia.org/wikipedia/en/b/b7/NirvanaNevermindalbumcover.jpg",
+          releaseDate: "1991-09-24",
+          displayDate: "September 24, 1991",
+          theme: {
+            background: "linear-gradient(135deg, #1e3a5f 0%, #2d5a8c 50%, #4a7ba7 100%)",
+            primary: "#4a7ba7",
+            primaryRgb: "74, 123, 167",
+            accent: "#6ba3d4"
+          },
+          tracks: [
+            {title: "Smells Like Teen Spirit", file: "audio/smells_like_teen_spirit.mp3"},
+            {title: "In Bloom", file: "audio/in_bloom.mp3"},
+            {title: "Come As You Are", file: "audio/come_as_you_are.mp3"},
+            {title: "Breed", file: "audio/breed.mp3"},
+            {title: "Lithium", file: "audio/lithium.m4a"},
+            {title: "Polly", file: "audio/polly.m4a"},
+            {title: "Territorial Pissing", file: "audio/territorial_pissings.m4a"},
+            {title: "Drain You", file: "audio/drain_you.mp3"},
+            {title: "Lounge Act", file: "audio/lounge_act.mp3"},
+            {title: "Stay Away", file: "audio/stay_away.m4a"},
+            {title: "On A Plain", file: "audio/on_a_plain.m4a"},
+            {title: "Something In The Way", file: "audio/something_in_the_way.m4a"},
+          ]
+        },
+        {
+          title: "In Utero",
+          cover: "ab67616d0000b273c4f52ef8782f0e8ede4c1aaf.jfif",
+          releaseDate: "1993-09-21",
+          displayDate: "September 21, 1993",
+          theme: {
+            background: "linear-gradient(135deg, #e8dcc0 0%, #d4c4a0 50%, #c0b090 100%)",
+            primary: "#7a3e3e",
+            primaryRgb: "122, 62, 62",
+            accent: "#9a5555"
+          },
+          tracks: [
+            {title: "Serve The Servants", file: "audio/serve.m4a"},
+            {title: "Scentless Apprentice", file: "audio/scentless.m4a"},
+            {title: "Heart Shaped Box", file: "audio/hear.m4a"},
+            {title: "Rape Me", file: "audio/me.m4a"},
+            {title: "Frances Farmer Will Have Her Revenge On Seattle", file: "audio/frances.m4a"},
+            {title: "Dumb", file: "audio/dumb.m4a"},
+            {title: "Very Ape", file: "audio/very.m4a"},
+            {title: "Milk It", file: "audio/milk.m4a"},
+            {title: "Pennyroyal Tea", file: "audio/penny.m4a"},
+            {title: "Radio Friendly Unit Shifter", file: "audio/radio.m4a"},
+            {title: "Tourette's", file: "audio/tour.m4a"},
+            {title: "All Apologies", file: "audio/apologies.m4a"},
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+// User data stored in localStorage (no Firebase needed!)
+let playlists = JSON.parse(localStorage.getItem('playlists')) || [];
+let likedAlbums = JSON.parse(localStorage.getItem('likedAlbums')) || [];
+let likedSongs = JSON.parse(localStorage.getItem('likedSongs')) || [];
+
+let currentView = 'artists';
+let currentArtistIndex = 0;
+let currentAlbumIndex = 0;
+let currentTrackIndex = 0;
+let currentPlaylistId = null;
+let currentPlaylistIndex = -1;
+let pendingAddType = null;
+let pendingAddData = null;
+
+const audio = document.getElementById("audio");
+const viewDiv = document.getElementById("view");
+const status = document.getElementById("status");
+const nowPlayingTitle = document.getElementById("nowPlayingTitle");
+const nowPlayingArtist = document.getElementById("nowPlayingArtist");
+const progressBar = document.getElementById("progressBar");
+const progressFill = document.getElementById("progressFill");
+const currentTimeEl = document.getElementById("currentTime");
+const durationEl = document.getElementById("duration");
+const volumeSlider = document.getElementById("volumeSlider");
+const volumeFill = document.getElementById("volumeFill");
+const volumePercentage = document.getElementById("volumePercentage");
+const volumeIcon = document.getElementById("volumeIcon");
+
+audio.volume = 1.0;
+let previousVolume = 1.0;
+let isShuffleOn = false;
+let repeatMode = 'off';
+let shuffleOrder = [];
+let shuffleIndex = 0;
+let currentShuffleContext = null;
+
+// Initialize on page load
+window.addEventListener('DOMContentLoaded', () => {
+  applyTheme(0, 0);
+  showArtistsView();
+  updateVolumeDisplay();
+});
+
+// ====== LOCAL STORAGE SAVE ======
+function saveUserData() {
+  localStorage.setItem('playlists', JSON.stringify(playlists));
+  localStorage.setItem('likedAlbums', JSON.stringify(likedAlbums));
+  localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
+}
+
+<!-- ========================================
      PART 2 OF 3 - COPY THIS ENTIRE SECTION
      Paste this RIGHT AFTER Part 1
      ======================================== -->
@@ -1636,7 +1717,7 @@ function updateGlobalShuffleButton(theme) {
   }
 }
 
- <!-- ========================================
+<!-- ========================================
      PART 3 OF 3 - COPY THIS ENTIRE SECTION
      Paste this RIGHT AFTER Part 2
      ======================================== -->
