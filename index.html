@@ -1172,21 +1172,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
 <script>
-// ====== FIREBASE CONFIGURATION ======
-const firebaseConfig = {
-  apiKey: "AIzaSyBBnoRAumsSjIRcAuMgZ9SbLvyBgrHveUA",
-  authDomain: "music-player-5b729.firebaseapp.com",
-  projectId: "music-player-5b729",
-  storageBucket: "music-player-5b729.firebasestorage.app",
-  messagingSenderId: "510281576115",
-  appId: "1:510281576115:web:8f09b88c7337f5dac94ac6",
-  measurementId: "G-ZRBTYTD4WV"
-};
-
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
 
 let currentUser = null;
 
@@ -1315,88 +1300,6 @@ let repeatMode = 'off';
 let shuffleOrder = [];
 let shuffleIndex = 0;
 let currentShuffleContext = null; 
-
-// ====== AUTHENTICATION ======
-auth.onAuthStateChanged(async (user) => {
-  if (user) {
-    currentUser = user;
-    document.getElementById('authContainer').style.display = 'none';
-    document.getElementById('mainContainer').classList.add('active');
-    
-    document.getElementById('userName').textContent = user.displayName || 'User';
-    document.getElementById('userEmail').textContent = user.email;
-    document.getElementById('userAvatar').src = user.photoURL || 'https://via.placeholder.com/48';
-    
-    await loadUserData();
-    applyTheme(0, 0);
-    showArtistsView();
-    updateVolumeDisplay();
-  } else {
-    currentUser = null;
-    document.getElementById('authContainer').style.display = 'block';
-    document.getElementById('mainContainer').classList.remove('active');
-  }
-});
-
-async function signInWithGoogle() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  try {
-    await auth.signInWithPopup(provider);
-  } catch (error) {
-    console.error('Error signing in:', error);
-    alert('Error signing in. Please try again.');
-  }
-}
-
-async function signOut() {
-  if (confirm('Are you sure you want to sign out?')) {
-    try {
-      await auth.signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  }
-}
-
-// ====== FIRESTORE DATA MANAGEMENT ======
-async function loadUserData() {
-  if (!currentUser) return;
-  
-  try {
-    const userDoc = await db.collection('users').doc(currentUser.uid).get();
-    
-    if (userDoc.exists) {
-      const data = userDoc.data();
-      playlists = data.playlists || [];
-      likedAlbums = data.likedAlbums || [];
-      likedSongs = data.likedSongs || [];
-    } else {
-      await db.collection('users').doc(currentUser.uid).set({
-        playlists: [],
-        likedAlbums: [],
-        likedSongs: [],
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }
-  } catch (error) {
-    console.error('Error loading user data:', error);
-  }
-}
-
-async function saveUserData() {
-  if (!currentUser) return;
-  
-  try {
-    await db.collection('users').doc(currentUser.uid).update({
-      playlists: playlists,
-      likedAlbums: likedAlbums,
-      likedSongs: likedSongs,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-  } catch (error) {
-    console.error('Error saving user data:', error);
-  }
-}
 
 // ====== HELPER FUNCTIONS ======
 function getAllAlbums() {
