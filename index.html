@@ -195,6 +195,38 @@
     transform: rotate(180deg);
   }
 
+  .artist-actions {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+    align-items: center;
+  }
+
+  .artist-shuffle-btn {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+  }
+
+  .artist-shuffle-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .artist-shuffle-btn.active {
+    background: rgba(255, 255, 255, 0.9);
+    color: #000;
+  }
+
   .artist-albums {
     display: none;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -262,6 +294,34 @@
     font-size: 0.85rem;
     font-weight: 400;
     text-align: center;
+  }
+
+  .album-shuffle-overlay {
+    position: absolute;
+    top: 28px;
+    left: 28px;
+    background: rgba(0, 0, 0, 0.7);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    z-index: 10;
+    opacity: 0;
+  }
+
+  .album-card:hover .album-shuffle-overlay {
+    opacity: 1;
+  }
+
+  .album-shuffle-overlay:hover {
+    transform: scale(1.1);
+    background: rgba(0, 0, 0, 0.9);
   }
 
   /* Like button on album cards */
@@ -349,6 +409,7 @@
     display: flex;
     gap: 12px;
     align-items: center;
+    flex-wrap: wrap;
   }
 
   .album-like-btn {
@@ -373,6 +434,32 @@
   .album-like-btn.liked {
     background: rgba(220, 38, 38, 0.9);
     border-color: rgba(220, 38, 38, 1);
+  }
+
+  .shuffle-play-btn {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    padding: 12px 24px;
+    color: white;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+  }
+
+  .shuffle-play-btn:hover {
+    transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .shuffle-play-btn.active {
+    background: rgba(255, 255, 255, 0.9);
+    color: #000;
+    border-color: rgba(255, 255, 255, 0.9);
   }
 
   .add-to-playlist-btn {
@@ -542,6 +629,37 @@
   .playlist-meta {
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.9rem;
+  }
+
+  .playlist-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .playlist-shuffle-btn {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .playlist-shuffle-btn:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .playlist-shuffle-btn.active {
+    background: rgba(255, 255, 255, 0.9);
+    color: #000;
   }
 
   .playlist-delete-btn {
@@ -959,6 +1077,16 @@
       height: 50px;
       font-size: 1.4rem;
     }
+
+    .artist-actions {
+      gap: 8px;
+    }
+
+    .artist-shuffle-btn {
+      width: 36px;
+      height: 36px;
+      font-size: 1rem;
+    }
   }
 </style>
 </head>
@@ -1075,7 +1203,7 @@ const library = {
         },
         {
           title: "Nevermind",
-          cover: "https://upload.wikimedia.org/wikipedia/en/b/b7/NirvanaNevermindalbumcover.jpg",
+          cover: "https://upload.wikimedia.org/wikipedia/en/b/b7/NirvanaNevermindalbumcover.jpg ",
           releaseDate: "1991-09-24",
           displayDate: "September 24, 1991",
           theme: {
@@ -1162,6 +1290,13 @@ let repeatMode = 'off';
 let shuffleOrder = [];
 let shuffleIndex = 0;
 
+// Context-aware shuffle state
+let currentContext = {
+  type: 'album', // 'album', 'artist', 'playlist', 'liked'
+  id: null, // artist index, playlist id, etc.
+  tracks: [] // array of track objects for current context
+};
+
 // ====== HELPER FUNCTIONS ======
 function getAllAlbums() {
   const allAlbums = [];
@@ -1204,6 +1339,181 @@ function saveData() {
   localStorage.setItem('playlists', JSON.stringify(playlists));
   localStorage.setItem('likedAlbums', JSON.stringify(likedAlbums));
   localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
+}
+
+// ====== SHUFFLE FUNCTIONS ======
+function getArtistTracks(artistIdx) {
+  const artist = library.artists[artistIdx];
+  const tracks = [];
+  artist.albums.forEach((album, albumIdx) => {
+    album.tracks.forEach((track, trackIdx) => {
+      tracks.push({
+        artistIdx: artistIdx,
+        albumIdx: albumIdx,
+        trackIdx: trackIdx,
+        artistName: artist.name,
+        albumTitle: album.title,
+        trackTitle: track.title,
+        file: track.file,
+        theme: album.theme
+      });
+    });
+  });
+  return tracks;
+}
+
+function getAlbumTracks(artistIdx, albumIdx) {
+  const artist = library.artists[artistIdx];
+  const album = artist.albums[albumIdx];
+  return album.tracks.map((track, trackIdx) => ({
+    artistIdx: artistIdx,
+    albumIdx: albumIdx,
+    trackIdx: trackIdx,
+    artistName: artist.name,
+    albumTitle: album.title,
+    trackTitle: track.title,
+    file: track.file,
+    theme: album.theme
+  }));
+}
+
+function getPlaylistTracks(playlistId) {
+  const playlist = playlists.find(p => p.id === playlistId);
+  return playlist ? playlist.tracks : [];
+}
+
+function getLikedTracks() {
+  return likedSongs.map(key => {
+    const [artistIdx, albumIdx, trackIdx] = key.split('-').map(Number);
+    const artist = library.artists[artistIdx];
+    const album = artist.albums[albumIdx];
+    const track = album.tracks[trackIdx];
+    return {
+      artistIdx,
+      albumIdx,
+      trackIdx,
+      artistName: artist.name,
+      albumTitle: album.title,
+      trackTitle: track.title,
+      file: track.file,
+      theme: album.theme
+    };
+  });
+}
+
+function shuffleArray(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function playShuffled(contextType, id) {
+  // Set up context
+  currentContext.type = contextType;
+  currentContext.id = id;
+  
+  // Get tracks based on context
+  switch(contextType) {
+    case 'artist':
+      currentContext.tracks = getArtistTracks(id);
+      break;
+    case 'album':
+      const [artistIdx, albumIdx] = id.split('-').map(Number);
+      currentContext.tracks = getAlbumTracks(artistIdx, albumIdx);
+      break;
+    case 'playlist':
+      currentContext.tracks = getPlaylistTracks(id);
+      break;
+    case 'liked':
+      currentContext.tracks = getLikedTracks();
+      break;
+  }
+  
+  if (currentContext.tracks.length === 0) {
+    status.textContent = 'No tracks to shuffle';
+    return;
+  }
+  
+  // Enable shuffle mode
+  isShuffleOn = true;
+  shuffleOrder = shuffleArray([...Array(currentContext.tracks.length).keys()]);
+  shuffleIndex = 0;
+  
+  // Update UI
+  const shuffleBtn = document.getElementById('shuffleBtn');
+  const theme = currentContext.tracks[0].theme;
+  shuffleBtn.style.background = theme.primary;
+  shuffleBtn.style.color = theme.primary === '#ffffff' ? '#000' : '#fff';
+  shuffleBtn.title = 'Shuffle On';
+  
+  // Start playing
+  const firstTrackIdx = shuffleOrder[0];
+  const firstTrack = currentContext.tracks[firstTrackIdx];
+  
+  currentArtistIndex = firstTrack.artistIdx;
+  currentAlbumIndex = firstTrack.albumIdx;
+  currentTrackIndex = firstTrack.trackIdx;
+  
+  applyTheme(currentArtistIndex, currentAlbumIndex);
+  loadTrackFromContext(firstTrack);
+  audio.play();
+  
+  // Update button states in UI
+  updateShuffleButtonStates(contextType, id, true);
+  
+  status.textContent = `🔀 Shuffling ${contextType === 'liked' ? 'Liked Songs' : contextType === 'playlist' ? 'Playlist' : contextType === 'artist' ? 'Artist' : 'Album'}`;
+}
+
+function loadTrackFromContext(track) {
+  audio.src = track.file;
+  nowPlayingTitle.textContent = track.trackTitle;
+  nowPlayingArtist.textContent = track.artistName + ' • ' + track.albumTitle;
+  status.textContent = `${track.artistName} • ${track.albumTitle} • ${track.trackTitle}`;
+  
+  // Update current indices for next/prev navigation
+  currentArtistIndex = track.artistIdx;
+  currentAlbumIndex = track.albumIdx;
+  currentTrackIndex = track.trackIdx;
+  
+  updateTrackUI();
+}
+
+function updateShuffleButtonStates(contextType, id, isActive) {
+  // Update all shuffle buttons in the UI
+  document.querySelectorAll('.artist-shuffle-btn').forEach(btn => {
+    const artistIdx = btn.getAttribute('data-artist-idx');
+    if (contextType === 'artist' && artistIdx == id) {
+      btn.classList.toggle('active', isActive);
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+  
+  document.querySelectorAll('.album-shuffle-overlay').forEach(btn => {
+    const key = btn.getAttribute('data-album-key');
+    if (contextType === 'album' && key === id) {
+      btn.style.opacity = isActive ? '1' : '';
+      btn.style.background = isActive ? 'rgba(255,255,255,0.9)' : '';
+      btn.style.color = isActive ? '#000' : '';
+    }
+  });
+  
+  document.querySelectorAll('.playlist-shuffle-btn').forEach(btn => {
+    const playlistId = btn.getAttribute('data-playlist-id');
+    if (contextType === 'playlist' && playlistId === id) {
+      btn.classList.toggle('active', isActive);
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+  
+  const shufflePlayBtn = document.querySelector('.shuffle-play-btn');
+  if (shufflePlayBtn) {
+    shufflePlayBtn.classList.toggle('active', isActive);
+  }
 }
 
 // ====== LIKE FUNCTIONS ======
@@ -1378,6 +1688,8 @@ function showPlaylist(playlistId) {
     return;
   }
   
+  const isShuffling = isShuffleOn && currentContext.type === 'playlist' && currentContext.id === playlistId;
+  
   const tracksHTML = playlist.tracks.map((track, idx) => `
     <div class="track-item" onclick="playPlaylistTrack('${playlistId}', ${idx})">
       <span class="track-number">${idx + 1}</span>
@@ -1402,6 +1714,11 @@ function showPlaylist(playlistId) {
           <h2>${playlist.name}</h2>
           <p class="artist-name">${playlist.tracks.length} tracks</p>
         </div>
+        <div class="track-header-actions">
+          <button class="shuffle-play-btn ${isShuffling ? 'active' : ''}" onclick="playShuffled('playlist', '${playlistId}')">
+            🔀 Shuffle Play
+          </button>
+        </div>
       </div>
       <div class="tracks">
         ${tracksHTML}
@@ -1415,6 +1732,11 @@ function showPlaylist(playlistId) {
 function playPlaylistTrack(playlistId, trackIndex) {
   const playlist = playlists.find(p => p.id === playlistId);
   const track = playlist.tracks[trackIndex];
+  
+  // Set context for playlist
+  currentContext.type = 'playlist';
+  currentContext.id = playlistId;
+  currentContext.tracks = playlist.tracks;
   
   currentArtistIndex = track.artistIdx;
   currentAlbumIndex = track.albumIdx;
@@ -1555,9 +1877,20 @@ function showArtistsView() {
     const albumCount = artist.albums.length;
     const trackCount = artist.albums.reduce((sum, album) => sum + album.tracks.length, 0);
     const initial = artist.name.charAt(0);
+    const isShuffling = isShuffleOn && currentContext.type === 'artist' && currentContext.id === artistIdx;
     
-    const albumsHTML = artist.albums.map((album, albumIdx) => `
+    const albumsHTML = artist.albums.map((album, albumIdx) => {
+      const key = getAlbumKey(artistIdx, albumIdx);
+      const isAlbumShuffling = isShuffleOn && currentContext.type === 'album' && currentContext.id === key;
+      return `
       <div class="album-card" onclick="showTracks(${artistIdx}, ${albumIdx})">
+        <button class="album-shuffle-overlay" 
+                data-album-key="${key}"
+                onclick="event.stopPropagation(); playShuffled('album', '${key}')" 
+                title="Shuffle Album"
+                style="${isAlbumShuffling ? 'opacity: 1; background: rgba(255,255,255,0.9); color: #000;' : ''}">
+          🔀
+        </button>
         <button class="like-btn ${isAlbumLiked(artistIdx, albumIdx) ? 'liked' : ''}" 
                 onclick="toggleAlbumLike(${artistIdx}, ${albumIdx}, event)">
           ${isAlbumLiked(artistIdx, albumIdx) ? '❤️' : '🤍'}
@@ -1566,7 +1899,7 @@ function showArtistsView() {
         <p class="album-title">${album.title}</p>
         <p class="album-date">${album.displayDate}</p>
       </div>
-    `).join('');
+    `}).join('');
     
     return `
       <div class="artist-card" id="artist-${artistIdx}">
@@ -1576,7 +1909,15 @@ function showArtistsView() {
             <h2>${artist.name}</h2>
             <p class="artist-meta">${albumCount} ${albumCount === 1 ? 'album' : 'albums'} • ${trackCount} tracks</p>
           </div>
-          <span class="expand-icon">▼</span>
+          <div class="artist-actions" onclick="event.stopPropagation()">
+            <button class="artist-shuffle-btn ${isShuffling ? 'active' : ''}" 
+                    data-artist-idx="${artistIdx}"
+                    onclick="playShuffled('artist', ${artistIdx})" 
+                    title="Shuffle All">
+              🔀
+            </button>
+            <span class="expand-icon">▼</span>
+          </div>
         </div>
         <div class="artist-albums">
           ${albumsHTML}
@@ -1597,8 +1938,18 @@ function toggleArtist(artistIdx) {
 function showAllAlbums() {
   const albums = getAllAlbums();
   
-  const albumsHTML = albums.map(album => `
+  const albumsHTML = albums.map(album => {
+    const key = getAlbumKey(album.artistIndex, album.albumIndex);
+    const isShuffling = isShuffleOn && currentContext.type === 'album' && currentContext.id === key;
+    return `
     <div class="album-card" onclick="showTracks(${album.artistIndex}, ${album.albumIndex})">
+      <button class="album-shuffle-overlay" 
+              data-album-key="${key}"
+              onclick="event.stopPropagation(); playShuffled('album', '${key}')" 
+              title="Shuffle Album"
+              style="${isShuffling ? 'opacity: 1; background: rgba(255,255,255,0.9); color: #000;' : ''}">
+        🔀
+      </button>
       <button class="like-btn ${isAlbumLiked(album.artistIndex, album.albumIndex) ? 'liked' : ''}" 
               onclick="toggleAlbumLike(${album.artistIndex}, ${album.albumIndex}, event)">
         ${isAlbumLiked(album.artistIndex, album.albumIndex) ? '❤️' : '🤍'}
@@ -1608,7 +1959,7 @@ function showAllAlbums() {
       <p class="album-artist">${album.artistName}</p>
       <p class="album-date">${album.displayDate}</p>
     </div>
-  `).join('');
+  `}).join('');
   
   viewDiv.innerHTML = `<div class="albums-grid">${albumsHTML}</div>`;
   updateThemedElements(library.artists[currentArtistIndex].albums[currentAlbumIndex].theme);
@@ -1617,8 +1968,18 @@ function showAllAlbums() {
 function showChronological() {
   const albums = getAlbumsSortedByDate();
   
-  const albumsHTML = albums.map(album => `
+  const albumsHTML = albums.map(album => {
+    const key = getAlbumKey(album.artistIndex, album.albumIndex);
+    const isShuffling = isShuffleOn && currentContext.type === 'album' && currentContext.id === key;
+    return `
     <div class="album-card" onclick="showTracks(${album.artistIndex}, ${album.albumIndex})">
+      <button class="album-shuffle-overlay" 
+              data-album-key="${key}"
+              onclick="event.stopPropagation(); playShuffled('album', '${key}')" 
+              title="Shuffle Album"
+              style="${isShuffling ? 'opacity: 1; background: rgba(255,255,255,0.9); color: #000;' : ''}">
+        🔀
+      </button>
       <button class="like-btn ${isAlbumLiked(album.artistIndex, album.albumIndex) ? 'liked' : ''}" 
               onclick="toggleAlbumLike(${album.artistIndex}, ${album.albumIndex}, event)">
         ${isAlbumLiked(album.artistIndex, album.albumIndex) ? '❤️' : '🤍'}
@@ -1628,7 +1989,7 @@ function showChronological() {
       <p class="album-artist">${album.artistName}</p>
       <p class="album-date">${album.displayDate}</p>
     </div>
-  `).join('');
+  `}).join('');
   
   viewDiv.innerHTML = `<div class="albums-grid">${albumsHTML}</div>`;
   updateThemedElements(library.artists[currentArtistIndex].albums[currentAlbumIndex].theme);
@@ -1650,7 +2011,9 @@ function showPlaylistsView() {
       </div>
     `;
   } else {
-    const playlistsHTML = playlists.map(playlist => `
+    const playlistsHTML = playlists.map(playlist => {
+      const isShuffling = isShuffleOn && currentContext.type === 'playlist' && currentContext.id === playlist.id;
+      return `
       <div class="playlist-card" onclick="showPlaylist('${playlist.id}')">
         <div class="playlist-header">
           <div class="playlist-icon" style="background: ${theme.primary}; color: ${theme.primary === '#ffffff' ? '#000' : '#fff'};">📝</div>
@@ -1658,10 +2021,18 @@ function showPlaylistsView() {
             <h3>${playlist.name}</h3>
             <p class="playlist-meta">${playlist.tracks.length} tracks</p>
           </div>
-          <button class="playlist-delete-btn" onclick="deletePlaylist('${playlist.id}', event)">🗑️</button>
+          <div class="playlist-actions" onclick="event.stopPropagation()">
+            <button class="playlist-shuffle-btn ${isShuffling ? 'active' : ''}" 
+                    data-playlist-id="${playlist.id}"
+                    onclick="playShuffled('playlist', '${playlist.id}')" 
+                    title="Shuffle Playlist">
+              🔀
+            </button>
+            <button class="playlist-delete-btn" onclick="deletePlaylist('${playlist.id}', event)">🗑️</button>
+          </div>
         </div>
       </div>
-    `).join('');
+    `}).join('');
     
     viewDiv.innerHTML = `
       <button class="create-playlist-btn" onclick="openCreatePlaylistModal()">
@@ -1723,17 +2094,28 @@ function showLikedView() {
   }
   
   let html = '';
+  const isShuffling = isShuffleOn && currentContext.type === 'liked';
   
   if (likedAlbumsData.length > 0) {
-    const albumsHTML = likedAlbumsData.map(album => `
+    const albumsHTML = likedAlbumsData.map(album => {
+      const key = getAlbumKey(album.artistIndex, album.albumIndex);
+      const isAlbumShuffling = isShuffleOn && currentContext.type === 'album' && currentContext.id === key;
+      return `
       <div class="album-card" onclick="showTracks(${album.artistIndex}, ${album.albumIndex})">
+        <button class="album-shuffle-overlay" 
+                data-album-key="${key}"
+                onclick="event.stopPropagation(); playShuffled('album', '${key}')" 
+                title="Shuffle Album"
+                style="${isAlbumShuffling ? 'opacity: 1; background: rgba(255,255,255,0.9); color: #000;' : ''}">
+          🔀
+        </button>
         <button class="like-btn liked" onclick="toggleAlbumLike(${album.artistIndex}, ${album.albumIndex}, event)">❤️</button>
         <img src="${album.cover}" alt="${album.title}">
         <p class="album-title">${album.title}</p>
         <p class="album-artist">${album.artistName}</p>
         <p class="album-date">${album.displayDate}</p>
       </div>
-    `).join('');
+    `}).join('');
     
     html += `
       <h2 style="color: white; margin-bottom: 20px; font-size: 1.5rem;">❤️ Liked Albums</h2>
@@ -1755,7 +2137,14 @@ function showLikedView() {
     `).join('');
     
     html += `
-      <h2 style="color: white; margin: 40px 0 20px; font-size: 1.5rem;">❤️ Liked Songs</h2>
+      <div style="display: flex; align-items: center; justify-content: space-between; margin: 40px 0 20px;">
+        <h2 style="color: white; font-size: 1.5rem;">❤️ Liked Songs</h2>
+        <button class="shuffle-play-btn ${isShuffling ? 'active' : ''}" 
+                onclick="playShuffled('liked', null)"
+                style="margin: 0;">
+          🔀 Shuffle All Liked
+        </button>
+      </div>
       <div class="tracks">${songsHTML}</div>
     `;
   }
@@ -1787,9 +2176,8 @@ function showTracks(artistIdx, albumIdx) {
   const album = artist.albums[albumIdx];
   applyTheme(artistIdx, albumIdx);
   
-  if (isShuffleOn) {
-    createShuffleOrder();
-  }
+  const key = getAlbumKey(artistIdx, albumIdx);
+  const isShuffling = isShuffleOn && currentContext.type === 'album' && currentContext.id === key;
   
   const tracksHTML = album.tracks.map((track, i) => `
     <div class="track-item" onclick="playTrack(${i})">
@@ -1816,6 +2204,9 @@ function showTracks(artistIdx, albumIdx) {
           <p class="release-date">${album.displayDate}</p>
         </div>
         <div class="track-header-actions">
+          <button class="shuffle-play-btn ${isShuffling ? 'active' : ''}" onclick="playShuffled('album', '${key}')">
+            🔀 Shuffle Play
+          </button>
           <button class="album-like-btn ${isAlbumLiked(artistIdx, albumIdx) ? 'liked' : ''}" 
                   onclick="toggleAlbumLike(${artistIdx}, ${albumIdx}, event)">
             ${isAlbumLiked(artistIdx, albumIdx) ? '❤️ Liked' : '🤍 Like'}
@@ -1837,8 +2228,18 @@ function showTracks(artistIdx, albumIdx) {
 function playTrack(trackIndex) {
   currentTrackIndex = trackIndex;
   
-  if (isShuffleOn) {
-    shuffleIndex = shuffleOrder.indexOf(trackIndex);
+  // If we're in a shuffle context, find the index in shuffle order
+  if (isShuffleOn && currentContext.tracks.length > 0) {
+    // Check if current track is in context
+    const currentTrack = library.artists[currentArtistIndex].albums[currentAlbumIndex].tracks[currentTrackIndex];
+    const contextIndex = currentContext.tracks.findIndex(t => 
+      t.artistIdx === currentArtistIndex && 
+      t.albumIdx === currentAlbumIndex && 
+      t.trackIdx === currentTrackIndex
+    );
+    if (contextIndex !== -1) {
+      shuffleIndex = shuffleOrder.indexOf(contextIndex);
+    }
   }
   
   loadTrack();
@@ -1895,28 +2296,25 @@ function playPause() {
       status.textContent = "⏸ Paused";
     }
   } else {
-    currentArtistIndex = 0;
-    currentAlbumIndex = 0;
-    currentTrackIndex = 0;
-    applyTheme(0, 0);
-    loadTrack();
+    // Start with shuffle if enabled, otherwise first track
+    if (isShuffleOn && currentContext.tracks.length > 0) {
+      const firstTrackIdx = shuffleOrder[0];
+      const firstTrack = currentContext.tracks[firstTrackIdx];
+      currentArtistIndex = firstTrack.artistIdx;
+      currentAlbumIndex = firstTrack.albumIdx;
+      currentTrackIndex = firstTrack.trackIdx;
+      applyTheme(currentArtistIndex, currentAlbumIndex);
+      loadTrack();
+    } else {
+      currentArtistIndex = 0;
+      currentAlbumIndex = 0;
+      currentTrackIndex = 0;
+      applyTheme(0, 0);
+      loadTrack();
+    }
     audio.play();
     playBtn.textContent = "⏸";
   }
-}
-
-function createShuffleOrder() {
-  const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
-  const trackCount = album.tracks.length;
-  
-  shuffleOrder = Array.from({length: trackCount}, (_, i) => i);
-  
-  for (let i = shuffleOrder.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffleOrder[i], shuffleOrder[j]] = [shuffleOrder[j], shuffleOrder[i]];
-  }
-  
-  shuffleIndex = shuffleOrder.indexOf(currentTrackIndex);
 }
 
 function toggleShuffle() {
@@ -1925,7 +2323,33 @@ function toggleShuffle() {
   const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
   
   if (isShuffleOn) {
-    createShuffleOrder();
+    // If we have a context, recreate shuffle order from current position
+    if (currentContext.tracks.length > 0) {
+      const currentTrack = library.artists[currentArtistIndex].albums[currentAlbumIndex].tracks[currentTrackIndex];
+      const currentContextIdx = currentContext.tracks.findIndex(t => 
+        t.artistIdx === currentArtistIndex && 
+        t.albumIdx === currentAlbumIndex && 
+        t.trackIdx === currentTrackIndex
+      );
+      
+      shuffleOrder = shuffleArray([...Array(currentContext.tracks.length).keys()]);
+      
+      // Move current track to start of shuffle
+      if (currentContextIdx !== -1) {
+        const currentShuffleIdx = shuffleOrder.indexOf(currentContextIdx);
+        [shuffleOrder[0], shuffleOrder[currentShuffleIdx]] = [shuffleOrder[currentShuffleIdx], shuffleOrder[0]];
+        shuffleIndex = 0;
+      }
+    } else {
+      // Create context from current album
+      const key = getAlbumKey(currentArtistIndex, currentAlbumIndex);
+      currentContext.type = 'album';
+      currentContext.id = key;
+      currentContext.tracks = getAlbumTracks(currentArtistIndex, currentAlbumIndex);
+      shuffleOrder = shuffleArray([...Array(currentContext.tracks.length).keys()]);
+      shuffleIndex = shuffleOrder.indexOf(currentTrackIndex);
+    }
+    
     shuffleBtn.style.background = theme.primary;
     shuffleBtn.style.color = theme.primary === '#ffffff' ? '#000' : '#fff';
     shuffleBtn.title = 'Shuffle On';
@@ -1935,7 +2359,12 @@ function toggleShuffle() {
     shuffleBtn.style.color = theme.primary;
     shuffleBtn.title = 'Shuffle';
     status.textContent = '🔀 Shuffle Off';
+    // Clear context when turning off shuffle manually
+    currentContext = { type: 'album', id: null, tracks: [] };
   }
+  
+  // Update UI buttons
+  updateShuffleButtonStates(currentContext.type, currentContext.id, isShuffleOn);
 }
 
 function toggleRepeat() {
@@ -1965,31 +2394,48 @@ function toggleRepeat() {
 }
 
 function next() {
-  const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
-  
-  if (isShuffleOn) {
+  if (isShuffleOn && currentContext.tracks.length > 0) {
     shuffleIndex = (shuffleIndex + 1) % shuffleOrder.length;
-    currentTrackIndex = shuffleOrder[shuffleIndex];
+    const nextTrackIdx = shuffleOrder[shuffleIndex];
+    const nextTrack = currentContext.tracks[nextTrackIdx];
+    
+    // Check if we need to change theme
+    if (nextTrack.artistIdx !== currentArtistIndex || nextTrack.albumIdx !== currentAlbumIndex) {
+      currentArtistIndex = nextTrack.artistIdx;
+      currentAlbumIndex = nextTrack.albumIdx;
+      applyTheme(currentArtistIndex, currentAlbumIndex);
+    }
+    
+    currentTrackIndex = nextTrack.trackIdx;
+    loadTrackFromContext(nextTrack);
   } else {
+    const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
     currentTrackIndex = (currentTrackIndex + 1) % album.tracks.length;
+    loadTrack();
   }
-  
-  loadTrack();
   audio.play();
   document.querySelector(".play-pause").textContent = "⏸";
 }
 
 function prev() {
-  const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
-  
-  if (isShuffleOn) {
+  if (isShuffleOn && currentContext.tracks.length > 0) {
     shuffleIndex = (shuffleIndex - 1 + shuffleOrder.length) % shuffleOrder.length;
-    currentTrackIndex = shuffleOrder[shuffleIndex];
+    const prevTrackIdx = shuffleOrder[shuffleIndex];
+    const prevTrack = currentContext.tracks[prevTrackIdx];
+    
+    if (prevTrack.artistIdx !== currentArtistIndex || prevTrack.albumIdx !== currentAlbumIndex) {
+      currentArtistIndex = prevTrack.artistIdx;
+      currentAlbumIndex = prevTrack.albumIdx;
+      applyTheme(currentArtistIndex, currentAlbumIndex);
+    }
+    
+    currentTrackIndex = prevTrack.trackIdx;
+    loadTrackFromContext(prevTrack);
   } else {
+    const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
     currentTrackIndex = (currentTrackIndex - 1 + album.tracks.length) % album.tracks.length;
+    loadTrack();
   }
-  
-  loadTrack();
   audio.play();
   document.querySelector(".play-pause").textContent = "⏸";
 }
