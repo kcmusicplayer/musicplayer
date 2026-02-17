@@ -1290,11 +1290,15 @@ let repeatMode = 'off';
 let shuffleOrder = [];
 let shuffleIndex = 0;
 
-// Context-aware shuffle state
+// Queue system - maintains the actual playback order
+let playbackQueue = []; // Array of track objects in playback order
+let currentQueueIndex = 0; // Current position in the queue
+
+// Context for understanding where tracks came from
 let currentContext = {
   type: 'album', // 'album', 'artist', 'playlist', 'liked'
-  id: null, // artist index, playlist id, etc.
-  tracks: [] // array of track objects for current context
+  id: null,
+  sourceTracks: [] // Original tracks from the source (for reshuffling)
 };
 
 // ====== HELPER FUNCTIONS ======
@@ -1341,8 +1345,23 @@ function saveData() {
   localStorage.setItem('likedSongs', JSON.stringify(likedSongs));
 }
 
-// ====== SHUFFLE FUNCTIONS ======
-function getArtistTracks(artistIdx) {
+// ====== QUEUE BUILDERS ======
+function buildAlbumQueue(artistIdx, albumIdx) {
+  const artist = library.artists[artistIdx];
+  const album = artist.albums[albumIdx];
+  return album.tracks.map((track, trackIdx) => ({
+    artistIdx: artistIdx,
+    albumIdx: albumIdx,
+    trackIdx: trackIdx,
+    artistName: artist.name,
+    albumTitle: album.title,
+    trackTitle: track.title,
+    file: track.file,
+    theme: album.theme
+  }));
+}
+
+function buildArtistQueue(artistIdx) {
   const artist = library.artists[artistIdx];
   const tracks = [];
   artist.albums.forEach((album, albumIdx) => {
@@ -1362,27 +1381,16 @@ function getArtistTracks(artistIdx) {
   return tracks;
 }
 
-function getAlbumTracks(artistIdx, albumIdx) {
-  const artist = library.artists[artistIdx];
-  const album = artist.albums[albumIdx];
-  return album.tracks.map((track, trackIdx) => ({
-    artistIdx: artistIdx,
-    albumIdx: albumIdx,
-    trackIdx: trackIdx,
-    artistName: artist.name,
-    albumTitle: album.title,
-    trackTitle: track.title,
-    file: track.file,
-    theme: album.theme
+function buildPlaylistQueue(playlistId) {
+  const playlist = playlists.find(p => p.id === playlistId);
+  if (!playlist) return [];
+  return playlist.tracks.map(track => ({
+    ...track,
+    theme: library.artists[track.artistIdx].albums[track.albumIdx].theme
   }));
 }
 
-function getPlaylistTracks(playlistId) {
-  const playlist = playlists.find(p => p.id === playlistId);
-  return playlist ? playlist.tracks : [];
-}
-
-function getLikedTracks() {
+function buildLikedQueue() {
   return likedSongs.map(key => {
     const [artistIdx, albumIdx, trackIdx] = key.split('-').map(Number);
     const artist = library.artists[artistIdx];
@@ -1401,6 +1409,7 @@ function getLikedTracks() {
   });
 }
 
+// ====== SHUFFLE FUNCTIONS ======
 function shuffleArray(array) {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -1410,79 +1419,176 @@ function shuffleArray(array) {
   return shuffled;
 }
 
-function playShuffled(contextType, id) {
-  // Set up context
-  currentContext.type = contextType;
-  currentContext.id = id;
+function generateShuffleOrder(length, startIndex = 0) {
+  // Create array of indices
+  const indices = Array.from({length}, (_, i) => i);
+  // Shuffle it
+  const shuffled = shuffleArray(indices);
   
-  // Get tracks based on context
-  switch(contextType) {
-    case 'artist':
-      currentContext.tracks = getArtistTracks(id);
-      break;
-    case 'album':
-      const [artistIdx, albumIdx] = id.split('-').map(Number);
-      currentContext.tracks = getAlbumTracks(artistIdx, albumIdx);
-      break;
-    case 'playlist':
-      currentContext.tracks = getPlaylistTracks(id);
-      break;
-    case 'liked':
-      currentContext.tracks = getLikedTracks();
-      break;
+  // If we have a start index, move it to position 0
+  if (startIndex > 0 && startIndex < length) {
+    const pos = shuffled.indexOf(startIndex);
+    [shuffled[0], shuffled[pos]] = [shuffled[pos], shuffled[0]];
   }
   
-  if (currentContext.tracks.length === 0) {
-    status.textContent = 'No tracks to shuffle';
-    return;
-  }
-  
-  // Enable shuffle mode
-  isShuffleOn = true;
-  shuffleOrder = shuffleArray([...Array(currentContext.tracks.length).keys()]);
-  shuffleIndex = 0;
-  
-  // Update UI
-  const shuffleBtn = document.getElementById('shuffleBtn');
-  const theme = currentContext.tracks[0].theme;
-  shuffleBtn.style.background = theme.primary;
-  shuffleBtn.style.color = theme.primary === '#ffffff' ? '#000' : '#fff';
-  shuffleBtn.title = 'Shuffle On';
-  
-  // Start playing
-  const firstTrackIdx = shuffleOrder[0];
-  const firstTrack = currentContext.tracks[firstTrackIdx];
-  
-  currentArtistIndex = firstTrack.artistIdx;
-  currentAlbumIndex = firstTrack.albumIdx;
-  currentTrackIndex = firstTrack.trackIdx;
-  
-  applyTheme(currentArtistIndex, currentAlbumIndex);
-  loadTrackFromContext(firstTrack);
-  audio.play();
-  
-  // Update button states in UI
-  updateShuffleButtonStates(contextType, id, true);
-  
-  status.textContent = `🔀 Shuffling ${contextType === 'liked' ? 'Liked Songs' : contextType === 'playlist' ? 'Playlist' : contextType === 'artist' ? 'Artist' : 'Album'}`;
+  return shuffled;
 }
 
-function loadTrackFromContext(track) {
+function setQueue(tracks, startIndex = 0, shuffled = false) {
+  playbackQueue = [...tracks];
+  currentContext.sourceTracks = [...tracks];
+  
+  if (shuffled && tracks.length > 1) {
+    shuffleOrder = generateShuffleOrder(tracks.length, startIndex);
+    currentQueueIndex = 0; // Start at beginning of shuffled order
+  } else {
+    shuffleOrder = Array.from({length: tracks.length}, (_, i) => i);
+    currentQueueIndex = startIndex;
+  }
+}
+
+function getCurrentTrack() {
+  if (playbackQueue.length === 0) return null;
+  const queueIdx = shuffleOrder[currentQueueIndex];
+  return playbackQueue[queueIdx];
+}
+
+function getNextTrack() {
+  if (playbackQueue.length === 0) return null;
+  
+  // Check if we're at the end
+  if (currentQueueIndex >= playbackQueue.length - 1) {
+    if (repeatMode === 'all') {
+      // Loop back to start
+      currentQueueIndex = 0;
+      return getCurrentTrack();
+    } else {
+      return null; // End of queue
+    }
+  }
+  
+  currentQueueIndex++;
+  return getCurrentTrack();
+}
+
+function getPrevTrack() {
+  if (playbackQueue.length === 0) return null;
+  
+  if (currentQueueIndex > 0) {
+    currentQueueIndex--;
+    return getCurrentTrack();
+  } else if (repeatMode === 'all') {
+    // Loop to end
+    currentQueueIndex = playbackQueue.length - 1;
+    return getCurrentTrack();
+  }
+  
+  return null;
+}
+
+function playQueueTrack(track) {
+  if (!track) return;
+  
   audio.src = track.file;
   nowPlayingTitle.textContent = track.trackTitle;
   nowPlayingArtist.textContent = track.artistName + ' • ' + track.albumTitle;
   status.textContent = `${track.artistName} • ${track.albumTitle} • ${track.trackTitle}`;
   
-  // Update current indices for next/prev navigation
+  // Update current indices
   currentArtistIndex = track.artistIdx;
   currentAlbumIndex = track.albumIdx;
   currentTrackIndex = track.trackIdx;
   
+  // Apply theme if different album
+  applyTheme(track.artistIdx, track.albumIdx);
   updateTrackUI();
 }
 
+function playFromQueue(startIndex = 0) {
+  const track = getCurrentTrack();
+  if (track) {
+    playQueueTrack(track);
+    audio.play();
+  }
+}
+
+// ====== PLAYBACK CONTROL FUNCTIONS ======
+function playAlbum(artistIdx, albumIdx, trackIdx = 0, shuffled = false) {
+  const tracks = buildAlbumQueue(artistIdx, albumIdx);
+  if (tracks.length === 0) return;
+  
+  currentContext.type = 'album';
+  currentContext.id = getAlbumKey(artistIdx, albumIdx);
+  
+  setQueue(tracks, trackIdx, shuffled);
+  isShuffleOn = shuffled;
+  updateShuffleUI();
+  
+  playFromQueue();
+}
+
+function playArtist(artistIdx, shuffled = false) {
+  const tracks = buildArtistQueue(artistIdx);
+  if (tracks.length === 0) return;
+  
+  currentContext.type = 'artist';
+  currentContext.id = artistIdx;
+  
+  setQueue(tracks, 0, shuffled);
+  isShuffleOn = shuffled;
+  updateShuffleUI();
+  
+  playFromQueue();
+}
+
+function playPlaylist(playlistId, trackIdx = 0, shuffled = false) {
+  const tracks = buildPlaylistQueue(playlistId);
+  if (tracks.length === 0) return;
+  
+  currentContext.type = 'playlist';
+  currentContext.id = playlistId;
+  
+  setQueue(tracks, trackIdx, shuffled);
+  isShuffleOn = shuffled;
+  updateShuffleUI();
+  
+  playFromQueue();
+}
+
+function playLiked(shuffled = false) {
+  const tracks = buildLikedQueue();
+  if (tracks.length === 0) return;
+  
+  currentContext.type = 'liked';
+  currentContext.id = null;
+  
+  setQueue(tracks, 0, shuffled);
+  isShuffleOn = shuffled;
+  updateShuffleUI();
+  
+  playFromQueue();
+}
+
+// ====== UI UPDATE FUNCTIONS ======
+function updateShuffleUI() {
+  const shuffleBtn = document.getElementById('shuffleBtn');
+  const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
+  
+  if (isShuffleOn) {
+    shuffleBtn.style.background = theme.primary;
+    shuffleBtn.style.color = theme.primary === '#ffffff' ? '#000' : '#fff';
+    shuffleBtn.title = 'Shuffle On';
+  } else {
+    shuffleBtn.style.background = 'rgba(0, 0, 0, 0.5)';
+    shuffleBtn.style.color = theme.primary;
+    shuffleBtn.title = 'Shuffle';
+  }
+  
+  // Update all shuffle buttons in UI
+  updateShuffleButtonStates(currentContext.type, currentContext.id, isShuffleOn);
+}
+
 function updateShuffleButtonStates(contextType, id, isActive) {
-  // Update all shuffle buttons in the UI
   document.querySelectorAll('.artist-shuffle-btn').forEach(btn => {
     const artistIdx = btn.getAttribute('data-artist-idx');
     if (contextType === 'artist' && artistIdx == id) {
@@ -1531,7 +1637,6 @@ function toggleAlbumLike(artistIdx, albumIdx, event) {
   
   saveData();
   
-  // Update UI
   const btn = event?.target;
   if (btn) {
     btn.textContent = isAlbumLiked(artistIdx, albumIdx) ? '❤️' : '🤍';
@@ -1553,7 +1658,6 @@ function toggleTrackLike(artistIdx, albumIdx, trackIdx, event) {
   
   saveData();
   
-  // Update UI
   const btn = event?.target;
   if (btn) {
     btn.textContent = isTrackLiked(artistIdx, albumIdx, trackIdx) ? '❤️' : '🤍';
@@ -1640,7 +1744,6 @@ function addAlbumToPlaylist(playlistId, artistIdx, albumIdx) {
   const playlist = playlists.find(p => p.id === playlistId);
   const album = library.artists[artistIdx].albums[albumIdx];
   
-  // Add all tracks from the album
   album.tracks.forEach((track, trackIdx) => {
     const trackData = {
       artistIdx,
@@ -1652,7 +1755,6 @@ function addAlbumToPlaylist(playlistId, artistIdx, albumIdx) {
       file: track.file
     };
     
-    // Avoid duplicates
     const exists = playlist.tracks.some(t => 
       t.artistIdx === artistIdx && 
       t.albumIdx === albumIdx && 
@@ -1668,83 +1770,6 @@ function addAlbumToPlaylist(playlistId, artistIdx, albumIdx) {
   closeAddToPlaylistModal();
   status.textContent = `✓ Album added to "${playlist.name}"`;
   setTimeout(() => status.textContent = 'Ready to play', 2000);
-}
-
-function showPlaylist(playlistId) {
-  const playlist = playlists.find(p => p.id === playlistId);
-  if (!playlist) return;
-  
-  const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
-  
-  if (playlist.tracks.length === 0) {
-    viewDiv.innerHTML = `
-      <button class="back-btn" onclick="setView('playlists')">← Back to Playlists</button>
-      <div class="empty-state">
-        <div class="empty-state-icon">🎵</div>
-        <div class="empty-state-text">No tracks in this playlist</div>
-        <div class="empty-state-subtext">Add albums to your playlist to see them here</div>
-      </div>
-    `;
-    return;
-  }
-  
-  const isShuffling = isShuffleOn && currentContext.type === 'playlist' && currentContext.id === playlistId;
-  
-  const tracksHTML = playlist.tracks.map((track, idx) => `
-    <div class="track-item" onclick="playPlaylistTrack('${playlistId}', ${idx})">
-      <span class="track-number">${idx + 1}</span>
-      <span class="track-title">${track.trackTitle}</span>
-      <span style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;">${track.artistName} • ${track.albumTitle}</span>
-      <div class="track-actions">
-        <button class="track-like-btn ${isTrackLiked(track.artistIdx, track.albumIdx, track.trackIdx) ? 'liked' : ''}" 
-                onclick="toggleTrackLike(${track.artistIdx}, ${track.albumIdx}, ${track.trackIdx}, event)">
-          ${isTrackLiked(track.artistIdx, track.albumIdx, track.trackIdx) ? '❤️' : '🤍'}
-        </button>
-        <span class="play-icon">▶</span>
-      </div>
-    </div>
-  `).join('');
-  
-  viewDiv.innerHTML = `
-    <button class="back-btn" onclick="setView('playlists')">← Back to Playlists</button>
-    <div class="track-view">
-      <div class="track-header">
-        <div class="playlist-icon" style="background: ${theme.primary}; color: ${theme.primary === '#ffffff' ? '#000' : '#fff'};">📝</div>
-        <div class="track-header-info">
-          <h2>${playlist.name}</h2>
-          <p class="artist-name">${playlist.tracks.length} tracks</p>
-        </div>
-        <div class="track-header-actions">
-          <button class="shuffle-play-btn ${isShuffling ? 'active' : ''}" onclick="playShuffled('playlist', '${playlistId}')">
-            🔀 Shuffle Play
-          </button>
-        </div>
-      </div>
-      <div class="tracks">
-        ${tracksHTML}
-      </div>
-    </div>
-  `;
-  
-  updateThemedElements(theme);
-}
-
-function playPlaylistTrack(playlistId, trackIndex) {
-  const playlist = playlists.find(p => p.id === playlistId);
-  const track = playlist.tracks[trackIndex];
-  
-  // Set context for playlist
-  currentContext.type = 'playlist';
-  currentContext.id = playlistId;
-  currentContext.tracks = playlist.tracks;
-  
-  currentArtistIndex = track.artistIdx;
-  currentAlbumIndex = track.albumIdx;
-  currentTrackIndex = track.trackIdx;
-  
-  applyTheme(currentArtistIndex, currentAlbumIndex);
-  loadTrack();
-  audio.play();
 }
 
 // ====== THEME FUNCTIONS ======
@@ -1886,7 +1911,7 @@ function showArtistsView() {
       <div class="album-card" onclick="showTracks(${artistIdx}, ${albumIdx})">
         <button class="album-shuffle-overlay" 
                 data-album-key="${key}"
-                onclick="event.stopPropagation(); playShuffled('album', '${key}')" 
+                onclick="event.stopPropagation(); playAlbum(${artistIdx}, ${albumIdx}, 0, true)" 
                 title="Shuffle Album"
                 style="${isAlbumShuffling ? 'opacity: 1; background: rgba(255,255,255,0.9); color: #000;' : ''}">
           🔀
@@ -1912,7 +1937,7 @@ function showArtistsView() {
           <div class="artist-actions" onclick="event.stopPropagation()">
             <button class="artist-shuffle-btn ${isShuffling ? 'active' : ''}" 
                     data-artist-idx="${artistIdx}"
-                    onclick="playShuffled('artist', ${artistIdx})" 
+                    onclick="playArtist(${artistIdx}, true)" 
                     title="Shuffle All">
               🔀
             </button>
@@ -1945,7 +1970,7 @@ function showAllAlbums() {
     <div class="album-card" onclick="showTracks(${album.artistIndex}, ${album.albumIndex})">
       <button class="album-shuffle-overlay" 
               data-album-key="${key}"
-              onclick="event.stopPropagation(); playShuffled('album', '${key}')" 
+              onclick="event.stopPropagation(); playAlbum(${album.artistIndex}, ${album.albumIndex}, 0, true)" 
               title="Shuffle Album"
               style="${isShuffling ? 'opacity: 1; background: rgba(255,255,255,0.9); color: #000;' : ''}">
         🔀
@@ -1975,7 +2000,7 @@ function showChronological() {
     <div class="album-card" onclick="showTracks(${album.artistIndex}, ${album.albumIndex})">
       <button class="album-shuffle-overlay" 
               data-album-key="${key}"
-              onclick="event.stopPropagation(); playShuffled('album', '${key}')" 
+              onclick="event.stopPropagation(); playAlbum(${album.artistIndex}, ${album.albumIndex}, 0, true)" 
               title="Shuffle Album"
               style="${isShuffling ? 'opacity: 1; background: rgba(255,255,255,0.9); color: #000;' : ''}">
         🔀
@@ -2024,7 +2049,7 @@ function showPlaylistsView() {
           <div class="playlist-actions" onclick="event.stopPropagation()">
             <button class="playlist-shuffle-btn ${isShuffling ? 'active' : ''}" 
                     data-playlist-id="${playlist.id}"
-                    onclick="playShuffled('playlist', '${playlist.id}')" 
+                    onclick="playPlaylist('${playlist.id}', 0, true)" 
                     title="Shuffle Playlist">
               🔀
             </button>
@@ -2048,10 +2073,79 @@ function showPlaylistsView() {
   updateThemedElements(theme);
 }
 
+function showPlaylist(playlistId) {
+  const playlist = playlists.find(p => p.id === playlistId);
+  if (!playlist) return;
+  
+  const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
+  
+  if (playlist.tracks.length === 0) {
+    viewDiv.innerHTML = `
+      <button class="back-btn" onclick="setView('playlists')">← Back to Playlists</button>
+      <div class="empty-state">
+        <div class="empty-state-icon">🎵</div>
+        <div class="empty-state-text">No tracks in this playlist</div>
+        <div class="empty-state-subtext">Add albums to your playlist to see them here</div>
+      </div>
+    `;
+    return;
+  }
+  
+  const isShuffling = isShuffleOn && currentContext.type === 'playlist' && currentContext.id === playlistId;
+  
+  const tracksHTML = playlist.tracks.map((track, idx) => `
+    <div class="track-item ${isCurrentTrackInQueue(track) ? 'current' : ''}" onclick="playPlaylist('${playlistId}', ${idx}, ${isShuffling})">
+      <span class="track-number">${idx + 1}</span>
+      <span class="track-title">${track.trackTitle}</span>
+      <span style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;">${track.artistName} • ${track.albumTitle}</span>
+      <div class="track-actions">
+        <button class="track-like-btn ${isTrackLiked(track.artistIdx, track.albumIdx, track.trackIdx) ? 'liked' : ''}" 
+                onclick="toggleTrackLike(${track.artistIdx}, ${track.albumIdx}, ${track.trackIdx}, event)">
+          ${isTrackLiked(track.artistIdx, track.albumIdx, track.trackIdx) ? '❤️' : '🤍'}
+        </button>
+        <span class="play-icon">▶</span>
+      </div>
+    </div>
+  `).join('');
+  
+  viewDiv.innerHTML = `
+    <button class="back-btn" onclick="setView('playlists')">← Back to Playlists</button>
+    <div class="track-view">
+      <div class="track-header">
+        <div class="playlist-icon" style="background: ${theme.primary}; color: ${theme.primary === '#ffffff' ? '#000' : '#fff'};">📝</div>
+        <div class="track-header-info">
+          <h2>${playlist.name}</h2>
+          <p class="artist-name">${playlist.tracks.length} tracks</p>
+        </div>
+        <div class="track-header-actions">
+          <button class="shuffle-play-btn ${isShuffling ? 'active' : ''}" onclick="playPlaylist('${playlistId}', 0, true)">
+            🔀 Shuffle Play
+          </button>
+          <button class="shuffle-play-btn ${!isShuffling ? 'active' : ''}" onclick="playPlaylist('${playlistId}', 0, false)">
+            ▶️ Play in Order
+          </button>
+        </div>
+      </div>
+      <div class="tracks">
+        ${tracksHTML}
+      </div>
+    </div>
+  `;
+  
+  updateThemedElements(theme);
+}
+
+function isCurrentTrackInQueue(track) {
+  const current = getCurrentTrack();
+  if (!current) return false;
+  return current.artistIdx === track.artistIdx && 
+         current.albumIdx === track.albumIdx && 
+         current.trackIdx === track.trackIdx;
+}
+
 function showLikedView() {
   const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
   
-  // Get liked albums
   const likedAlbumsData = likedAlbums.map(key => {
     const [artistIdx, albumIdx] = key.split('-').map(Number);
     const artist = library.artists[artistIdx];
@@ -2064,7 +2158,6 @@ function showLikedView() {
     };
   });
   
-  // Get liked songs
   const likedSongsData = likedSongs.map(key => {
     const [artistIdx, albumIdx, trackIdx] = key.split('-').map(Number);
     const artist = library.artists[artistIdx];
@@ -2104,7 +2197,7 @@ function showLikedView() {
       <div class="album-card" onclick="showTracks(${album.artistIndex}, ${album.albumIndex})">
         <button class="album-shuffle-overlay" 
                 data-album-key="${key}"
-                onclick="event.stopPropagation(); playShuffled('album', '${key}')" 
+                onclick="event.stopPropagation(); playAlbum(${album.artistIndex}, ${album.albumIndex}, 0, true)" 
                 title="Shuffle Album"
                 style="${isAlbumShuffling ? 'opacity: 1; background: rgba(255,255,255,0.9); color: #000;' : ''}">
           🔀
@@ -2125,7 +2218,7 @@ function showLikedView() {
   
   if (likedSongsData.length > 0) {
     const songsHTML = likedSongsData.map((track, idx) => `
-      <div class="track-item" onclick="playLikedTrack(${idx})">
+      <div class="track-item" onclick="playLikedTrack(${idx}, ${isShuffling})">
         <span class="track-number">${idx + 1}</span>
         <span class="track-title">${track.trackTitle}</span>
         <span style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;">${track.artistName} • ${track.albumTitle}</span>
@@ -2139,11 +2232,18 @@ function showLikedView() {
     html += `
       <div style="display: flex; align-items: center; justify-content: space-between; margin: 40px 0 20px;">
         <h2 style="color: white; font-size: 1.5rem;">❤️ Liked Songs</h2>
-        <button class="shuffle-play-btn ${isShuffling ? 'active' : ''}" 
-                onclick="playShuffled('liked', null)"
-                style="margin: 0;">
-          🔀 Shuffle All Liked
-        </button>
+        <div style="display: flex; gap: 12px;">
+          <button class="shuffle-play-btn ${isShuffling ? 'active' : ''}" 
+                  onclick="playLiked(true)"
+                  style="margin: 0;">
+            🔀 Shuffle
+          </button>
+          <button class="shuffle-play-btn ${!isShuffling ? 'active' : ''}" 
+                  onclick="playLiked(false)"
+                  style="margin: 0;">
+            ▶️ Play in Order
+          </button>
+        </div>
       </div>
       <div class="tracks">${songsHTML}</div>
     `;
@@ -2153,20 +2253,15 @@ function showLikedView() {
   updateThemedElements(theme);
 }
 
-function playLikedTrack(index) {
-  const likedSongsData = likedSongs.map(key => {
-    const [artistIdx, albumIdx, trackIdx] = key.split('-').map(Number);
-    return { artistIdx, albumIdx, trackIdx };
-  });
-  
-  const track = likedSongsData[index];
-  currentArtistIndex = track.artistIdx;
-  currentAlbumIndex = track.albumIdx;
-  currentTrackIndex = track.trackIdx;
-  
-  applyTheme(currentArtistIndex, currentAlbumIndex);
-  loadTrack();
-  audio.play();
+function playLikedTrack(index, shuffled = false) {
+  playLiked(shuffled);
+  // Jump to specific track
+  currentQueueIndex = index;
+  const track = getCurrentTrack();
+  if (track) {
+    playQueueTrack(track);
+    audio.play();
+  }
 }
 
 function showTracks(artistIdx, albumIdx) {
@@ -2180,7 +2275,7 @@ function showTracks(artistIdx, albumIdx) {
   const isShuffling = isShuffleOn && currentContext.type === 'album' && currentContext.id === key;
   
   const tracksHTML = album.tracks.map((track, i) => `
-    <div class="track-item" onclick="playTrack(${i})">
+    <div class="track-item" onclick="playAlbum(${artistIdx}, ${albumIdx}, ${i}, ${isShuffling})">
       <span class="track-number">${i + 1}</span>
       <span class="track-title">${track.title}</span>
       <div class="track-actions">
@@ -2204,8 +2299,11 @@ function showTracks(artistIdx, albumIdx) {
           <p class="release-date">${album.displayDate}</p>
         </div>
         <div class="track-header-actions">
-          <button class="shuffle-play-btn ${isShuffling ? 'active' : ''}" onclick="playShuffled('album', '${key}')">
+          <button class="shuffle-play-btn ${isShuffling ? 'active' : ''}" onclick="playAlbum(${artistIdx}, ${albumIdx}, 0, true)">
             🔀 Shuffle Play
+          </button>
+          <button class="shuffle-play-btn ${!isShuffling ? 'active' : ''}" onclick="playAlbum(${artistIdx}, ${albumIdx}, 0, false)">
+            ▶️ Play in Order
           </button>
           <button class="album-like-btn ${isAlbumLiked(artistIdx, albumIdx) ? 'liked' : ''}" 
                   onclick="toggleAlbumLike(${artistIdx}, ${albumIdx}, event)">
@@ -2225,63 +2323,40 @@ function showTracks(artistIdx, albumIdx) {
   updateTrackUI();
 }
 
-function playTrack(trackIndex) {
-  currentTrackIndex = trackIndex;
-  
-  // If we're in a shuffle context, find the index in shuffle order
-  if (isShuffleOn && currentContext.tracks.length > 0) {
-    // Check if current track is in context
-    const currentTrack = library.artists[currentArtistIndex].albums[currentAlbumIndex].tracks[currentTrackIndex];
-    const contextIndex = currentContext.tracks.findIndex(t => 
-      t.artistIdx === currentArtistIndex && 
-      t.albumIdx === currentAlbumIndex && 
-      t.trackIdx === currentTrackIndex
-    );
-    if (contextIndex !== -1) {
-      shuffleIndex = shuffleOrder.indexOf(contextIndex);
-    }
-  }
-  
-  loadTrack();
-  audio.play();
-}
-
-function loadTrack() {
-  const artist = library.artists[currentArtistIndex];
-  const album = artist.albums[currentAlbumIndex];
-  const track = album.tracks[currentTrackIndex];
-  audio.src = track.file;
-  nowPlayingTitle.textContent = track.title;
-  nowPlayingArtist.textContent = artist.name + ' • ' + album.title;
-  status.textContent = `${artist.name} • ${album.title} • ${track.title}`;
-  updateTrackUI();
-}
-
 function updateTrackUI() {
   const trackItems = document.querySelectorAll(".track-item");
   const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
   
   trackItems.forEach((el, i) => {
-    if (i === currentTrackIndex) {
-      el.classList.add("current");
-      el.style.background = `rgba(${theme.primaryRgb}, 0.25)`;
-      el.style.borderColor = `rgba(${theme.primaryRgb}, 0.6)`;
-    } else {
-      el.classList.remove("current");
-      el.style.background = "rgba(0, 0, 0, 0.3)";
-      el.style.borderColor = "transparent";
-    }
+    el.classList.remove("current");
+    el.style.background = "rgba(0, 0, 0, 0.3)";
+    el.style.borderColor = "transparent";
   });
   
+  // Find and highlight current track
+  const current = getCurrentTrack();
+  if (current) {
+    trackItems.forEach((el, i) => {
+      // Check if this element corresponds to current track
+      const trackNum = el.querySelector('.track-number');
+      if (trackNum && parseInt(trackNum.textContent) - 1 === current.trackIdx) {
+        el.classList.add("current");
+        el.style.background = `rgba(${theme.primaryRgb}, 0.25)`;
+        el.style.borderColor = `rgba(${theme.primaryRgb}, 0.6)`;
+      }
+    });
+  }
+  
   document.querySelectorAll('.track-number').forEach((num, i) => {
-    if (i === currentTrackIndex) {
-      num.style.color = theme.primary;
-    } else {
-      num.style.color = `rgba(${theme.primaryRgb}, 0.7)`;
-    }
+    num.style.color = `rgba(${theme.primaryRgb}, 0.7)`;
+  });
+  
+  document.querySelectorAll('.track-item.current .track-number').forEach(num => {
+    num.style.color = theme.primary;
   });
 }
 
+// ====== PLAYER CONTROLS ======
 function playPause() {
   const playBtn = document.querySelector(".play-pause");
   
@@ -2296,75 +2371,51 @@ function playPause() {
       status.textContent = "⏸ Paused";
     }
   } else {
-    // Start with shuffle if enabled, otherwise first track
-    if (isShuffleOn && currentContext.tracks.length > 0) {
-      const firstTrackIdx = shuffleOrder[0];
-      const firstTrack = currentContext.tracks[firstTrackIdx];
-      currentArtistIndex = firstTrack.artistIdx;
-      currentAlbumIndex = firstTrack.albumIdx;
-      currentTrackIndex = firstTrack.trackIdx;
-      applyTheme(currentArtistIndex, currentAlbumIndex);
-      loadTrack();
-    } else {
-      currentArtistIndex = 0;
-      currentAlbumIndex = 0;
-      currentTrackIndex = 0;
-      applyTheme(0, 0);
-      loadTrack();
-    }
-    audio.play();
+    // Start with first album if nothing loaded
+    playAlbum(0, 0, 0, isShuffleOn);
     playBtn.textContent = "⏸";
   }
 }
 
 function toggleShuffle() {
-  isShuffleOn = !isShuffleOn;
-  const shuffleBtn = document.getElementById('shuffleBtn');
-  const theme = library.artists[currentArtistIndex].albums[currentAlbumIndex].theme;
-  
-  if (isShuffleOn) {
-    // If we have a context, recreate shuffle order from current position
-    if (currentContext.tracks.length > 0) {
-      const currentTrack = library.artists[currentArtistIndex].albums[currentAlbumIndex].tracks[currentTrackIndex];
-      const currentContextIdx = currentContext.tracks.findIndex(t => 
-        t.artistIdx === currentArtistIndex && 
-        t.albumIdx === currentAlbumIndex && 
-        t.trackIdx === currentTrackIndex
-      );
-      
-      shuffleOrder = shuffleArray([...Array(currentContext.tracks.length).keys()]);
-      
-      // Move current track to start of shuffle
-      if (currentContextIdx !== -1) {
-        const currentShuffleIdx = shuffleOrder.indexOf(currentContextIdx);
-        [shuffleOrder[0], shuffleOrder[currentShuffleIdx]] = [shuffleOrder[currentShuffleIdx], shuffleOrder[0]];
-        shuffleIndex = 0;
-      }
-    } else {
-      // Create context from current album
-      const key = getAlbumKey(currentArtistIndex, currentAlbumIndex);
-      currentContext.type = 'album';
-      currentContext.id = key;
-      currentContext.tracks = getAlbumTracks(currentArtistIndex, currentAlbumIndex);
-      shuffleOrder = shuffleArray([...Array(currentContext.tracks.length).keys()]);
-      shuffleIndex = shuffleOrder.indexOf(currentTrackIndex);
-    }
-    
-    shuffleBtn.style.background = theme.primary;
-    shuffleBtn.style.color = theme.primary === '#ffffff' ? '#000' : '#fff';
-    shuffleBtn.title = 'Shuffle On';
-    status.textContent = '🔀 Shuffle On';
-  } else {
-    shuffleBtn.style.background = 'rgba(0, 0, 0, 0.5)';
-    shuffleBtn.style.color = theme.primary;
-    shuffleBtn.title = 'Shuffle';
-    status.textContent = '🔀 Shuffle Off';
-    // Clear context when turning off shuffle manually
-    currentContext = { type: 'album', id: null, tracks: [] };
+  if (playbackQueue.length === 0) {
+    // No queue yet, just toggle the state for next play
+    isShuffleOn = !isShuffleOn;
+    updateShuffleUI();
+    status.textContent = isShuffleOn ? '🔀 Shuffle On (next play)' : '🔀 Shuffle Off';
+    return;
   }
   
-  // Update UI buttons
-  updateShuffleButtonStates(currentContext.type, currentContext.id, isShuffleOn);
+  // Toggle shuffle on current queue
+  isShuffleOn = !isShuffleOn;
+  
+  if (isShuffleOn) {
+    // Get current track position in source
+    const currentTrack = getCurrentTrack();
+    const sourceIndex = currentContext.sourceTracks.findIndex(t => 
+      t.artistIdx === currentTrack.artistIdx && 
+      t.albumIdx === currentTrack.albumIdx && 
+      t.trackIdx === currentTrack.trackIdx
+    );
+    
+    // Regenerate shuffle with current track first
+    shuffleOrder = generateShuffleOrder(playbackQueue.length, sourceIndex);
+    currentQueueIndex = 0;
+  } else {
+    // Restore original order - find where current track is in source
+    const currentTrack = getCurrentTrack();
+    const sourceIndex = currentContext.sourceTracks.findIndex(t => 
+      t.artistIdx === currentTrack.artistIdx && 
+      t.albumIdx === currentTrack.albumIdx && 
+      t.trackIdx === currentTrack.trackIdx
+    );
+    
+    shuffleOrder = Array.from({length: playbackQueue.length}, (_, i) => i);
+    currentQueueIndex = sourceIndex;
+  }
+  
+  updateShuffleUI();
+  status.textContent = isShuffleOn ? '🔀 Shuffle On' : '🔀 Shuffle Off';
 }
 
 function toggleRepeat() {
@@ -2394,113 +2445,30 @@ function toggleRepeat() {
 }
 
 function next() {
-  if (isShuffleOn && currentContext.tracks.length > 0) {
-    shuffleIndex = (shuffleIndex + 1) % shuffleOrder.length;
-    const nextTrackIdx = shuffleOrder[shuffleIndex];
-    const nextTrack = currentContext.tracks[nextTrackIdx];
-    
-    // Check if we need to change theme
-    if (nextTrack.artistIdx !== currentArtistIndex || nextTrack.albumIdx !== currentAlbumIndex) {
-      currentArtistIndex = nextTrack.artistIdx;
-      currentAlbumIndex = nextTrack.albumIdx;
-      applyTheme(currentArtistIndex, currentAlbumIndex);
-    }
-    
-    currentTrackIndex = nextTrack.trackIdx;
-    loadTrackFromContext(nextTrack);
-  } else {
-    // FIX: Check if we have a context (playlist/artist/liked) to continue through
-    if (currentContext.tracks.length > 0) {
-      // Find current position in context
-      const currentIdx = currentContext.tracks.findIndex(t => 
-        t.artistIdx === currentArtistIndex && 
-        t.albumIdx === currentAlbumIndex && 
-        t.trackIdx === currentTrackIndex
-      );
-      
-      if (currentIdx !== -1 && currentIdx < currentContext.tracks.length - 1) {
-        // Move to next track in context
-        const nextTrack = currentContext.tracks[currentIdx + 1];
-        currentArtistIndex = nextTrack.artistIdx;
-        currentAlbumIndex = nextTrack.albumIdx;
-        currentTrackIndex = nextTrack.trackIdx;
-        
-        if (nextTrack.theme) {
-          applyTheme(currentArtistIndex, currentAlbumIndex);
-        }
-        loadTrackFromContext(nextTrack);
-        audio.play();
-        return;
-      } else if (currentIdx === currentContext.tracks.length - 1 && repeatMode === 'all') {
-        // Loop back to start of context
-        const firstTrack = currentContext.tracks[0];
-        currentArtistIndex = firstTrack.artistIdx;
-        currentAlbumIndex = firstTrack.albumIdx;
-        currentTrackIndex = firstTrack.trackIdx;
-        
-        if (firstTrack.theme) {
-          applyTheme(currentArtistIndex, currentAlbumIndex);
-        }
-        loadTrackFromContext(firstTrack);
-        audio.play();
-        return;
-      }
-    }
-    
-    // Default: move to next track in current album
-    const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
-    currentTrackIndex = (currentTrackIndex + 1) % album.tracks.length;
-    loadTrack();
+  if (repeatMode === 'one') {
+    audio.currentTime = 0;
+    audio.play();
+    return;
   }
-  audio.play();
-  document.querySelector(".play-pause").textContent = "⏸";
+  
+  const nextTrack = getNextTrack();
+  if (nextTrack) {
+    playQueueTrack(nextTrack);
+    audio.play();
+    document.querySelector(".play-pause").textContent = "⏸";
+  } else {
+    status.textContent = "End of queue";
+    document.querySelector(".play-pause").textContent = "▶";
+  }
 }
 
 function prev() {
-  if (isShuffleOn && currentContext.tracks.length > 0) {
-    shuffleIndex = (shuffleIndex - 1 + shuffleOrder.length) % shuffleOrder.length;
-    const prevTrackIdx = shuffleOrder[shuffleIndex];
-    const prevTrack = currentContext.tracks[prevTrackIdx];
-    
-    if (prevTrack.artistIdx !== currentArtistIndex || prevTrack.albumIdx !== currentAlbumIndex) {
-      currentArtistIndex = prevTrack.artistIdx;
-      currentAlbumIndex = prevTrack.albumIdx;
-      applyTheme(currentArtistIndex, currentAlbumIndex);
-    }
-    
-    currentTrackIndex = prevTrack.trackIdx;
-    loadTrackFromContext(prevTrack);
-  } else {
-    // FIX: Check if we have a context to go back through
-    if (currentContext.tracks.length > 0) {
-      const currentIdx = currentContext.tracks.findIndex(t => 
-        t.artistIdx === currentArtistIndex && 
-        t.albumIdx === currentAlbumIndex && 
-        t.trackIdx === currentTrackIndex
-      );
-      
-      if (currentIdx > 0) {
-        const prevTrack = currentContext.tracks[currentIdx - 1];
-        currentArtistIndex = prevTrack.artistIdx;
-        currentAlbumIndex = prevTrack.albumIdx;
-        currentTrackIndex = prevTrack.trackIdx;
-        
-        if (prevTrack.theme) {
-          applyTheme(currentArtistIndex, currentAlbumIndex);
-        }
-        loadTrackFromContext(prevTrack);
-        audio.play();
-        return;
-      }
-    }
-    
-    // Default: move to previous track in current album
-    const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
-    currentTrackIndex = (currentTrackIndex - 1 + album.tracks.length) % album.tracks.length;
-    loadTrack();
+  const prevTrack = getPrevTrack();
+  if (prevTrack) {
+    playQueueTrack(prevTrack);
+    audio.play();
+    document.querySelector(".play-pause").textContent = "⏸";
   }
-  audio.play();
-  document.querySelector(".play-pause").textContent = "⏸";
 }
 
 function formatTime(seconds) {
@@ -2534,6 +2502,7 @@ function toggleMute() {
   updateVolumeDisplay();
 }
 
+// ====== EVENT LISTENERS ======
 volumeSlider.addEventListener('click', (e) => {
   const rect = volumeSlider.getBoundingClientRect();
   const percent = (e.clientX - rect.left) / rect.width;
