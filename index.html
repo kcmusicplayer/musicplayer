@@ -1203,7 +1203,7 @@ const library = {
         },
         {
           title: "Nevermind",
-          cover: "https://upload.wikimedia.org/wikipedia/en/b/b7/NirvanaNevermindalbumcover.jpg ",
+          cover: "https://upload.wikimedia.org/wikipedia/en/b/b7/NirvanaNevermindalbumcover.jpg  ",
           releaseDate: "1991-09-24",
           displayDate: "September 24, 1991",
           theme: {
@@ -2409,6 +2409,45 @@ function next() {
     currentTrackIndex = nextTrack.trackIdx;
     loadTrackFromContext(nextTrack);
   } else {
+    // FIX: Check if we have a context (playlist/artist/liked) to continue through
+    if (currentContext.tracks.length > 0) {
+      // Find current position in context
+      const currentIdx = currentContext.tracks.findIndex(t => 
+        t.artistIdx === currentArtistIndex && 
+        t.albumIdx === currentAlbumIndex && 
+        t.trackIdx === currentTrackIndex
+      );
+      
+      if (currentIdx !== -1 && currentIdx < currentContext.tracks.length - 1) {
+        // Move to next track in context
+        const nextTrack = currentContext.tracks[currentIdx + 1];
+        currentArtistIndex = nextTrack.artistIdx;
+        currentAlbumIndex = nextTrack.albumIdx;
+        currentTrackIndex = nextTrack.trackIdx;
+        
+        if (nextTrack.theme) {
+          applyTheme(currentArtistIndex, currentAlbumIndex);
+        }
+        loadTrackFromContext(nextTrack);
+        audio.play();
+        return;
+      } else if (currentIdx === currentContext.tracks.length - 1 && repeatMode === 'all') {
+        // Loop back to start of context
+        const firstTrack = currentContext.tracks[0];
+        currentArtistIndex = firstTrack.artistIdx;
+        currentAlbumIndex = firstTrack.albumIdx;
+        currentTrackIndex = firstTrack.trackIdx;
+        
+        if (firstTrack.theme) {
+          applyTheme(currentArtistIndex, currentAlbumIndex);
+        }
+        loadTrackFromContext(firstTrack);
+        audio.play();
+        return;
+      }
+    }
+    
+    // Default: move to next track in current album
     const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
     currentTrackIndex = (currentTrackIndex + 1) % album.tracks.length;
     loadTrack();
@@ -2432,6 +2471,30 @@ function prev() {
     currentTrackIndex = prevTrack.trackIdx;
     loadTrackFromContext(prevTrack);
   } else {
+    // FIX: Check if we have a context to go back through
+    if (currentContext.tracks.length > 0) {
+      const currentIdx = currentContext.tracks.findIndex(t => 
+        t.artistIdx === currentArtistIndex && 
+        t.albumIdx === currentAlbumIndex && 
+        t.trackIdx === currentTrackIndex
+      );
+      
+      if (currentIdx > 0) {
+        const prevTrack = currentContext.tracks[currentIdx - 1];
+        currentArtistIndex = prevTrack.artistIdx;
+        currentAlbumIndex = prevTrack.albumIdx;
+        currentTrackIndex = prevTrack.trackIdx;
+        
+        if (prevTrack.theme) {
+          applyTheme(currentArtistIndex, currentAlbumIndex);
+        }
+        loadTrackFromContext(prevTrack);
+        audio.play();
+        return;
+      }
+    }
+    
+    // Default: move to previous track in current album
     const album = library.artists[currentArtistIndex].albums[currentAlbumIndex];
     currentTrackIndex = (currentTrackIndex - 1 + album.tracks.length) % album.tracks.length;
     loadTrack();
